@@ -1,0 +1,10 @@
+gui:
+  theme:
+    lightTheme: true
+    inactiveBorderColor:
+      - black
+
+    selectedLineBgColor:
+      - reverse
+    selectedRangeBgColor:
+      - reverse
