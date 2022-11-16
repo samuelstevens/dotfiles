@@ -54,7 +54,10 @@
 (let [venv (.. vim.env.HOME "/.local/venv/nvim")]
   (vimg "python3_host_prog" (.. venv "/bin/python")))
 
-(vimopt {:grepprg "rg -C 0 -n --no-heading $*"})
+; Search
+(if (vim.fn.executable "rg")
+    (vimopt {:grepprg "rg --vimgrep $*" :grepformat "%f:%l:%c:%m"}))
+(vim.api.nvim_set_keymap "n" "<leader>/" ":grep " {:noremap true})
 
 (fn treesitter-config []
  {:ensure_installed [ "lua" "rust" "toml" "python" "fennel" ]
@@ -81,3 +84,6 @@
 ; Plugins
 (let [ctrlp (require :ctrlp)]
   (ctrlp.setup "~/.fzf"))
+
+(let [surround (require :surround)]
+  (surround.setup))

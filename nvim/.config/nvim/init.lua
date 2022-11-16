@@ -25,7 +25,11 @@ do
   local venv = (vim.env.HOME .. "/.local/venv/nvim")
   vimg("python3_host_prog", (venv .. "/bin/python"))
 end
-vimopt({grepprg = "rg -C 0 -n --no-heading $*"})
+if vim.fn.executable("rg") then
+  vimopt({grepprg = "rg --vimgrep $*", grepformat = "%f:%l:%c:%m"})
+else
+end
+vim.api.nvim_set_keymap("n", "<leader>/", ":grep ", {noremap = true})
 local function treesitter_config()
   return {ensure_installed = {"lua", "rust", "toml", "python", "fennel"}, auto_install = true, highlight = {enable = true, additional_vim_regex_highlighting = false}, indent = {enable = true}, rainbow = {enable = true, extended_mode = true, max_file_lines = nil}}
 end
@@ -37,5 +41,10 @@ vimopt({foldmethod = "expr", foldexpr = "nvim_treesitter#foldexpr()"})
 vim.api.nvim_set_keymap("n", "o", "o<esc>", {noremap = true})
 vim.api.nvim_set_keymap("n", "O", "O<esc>", {noremap = true})
 vim.api.nvim_set_keymap("n", "<c-e>", "<c-^>", {noremap = true})
-local ctrlp = require("ctrlp")
-return ctrlp.setup("~/.fzf")
+vim.api.nvim_set_keymap("n", "<leader><cr>", ":nohlsearch<CR>", {noremap = true})
+do
+  local ctrlp = require("ctrlp")
+  ctrlp.setup("~/.fzf")
+end
+local surround = require("surround")
+return surround.setup()
