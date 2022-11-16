@@ -76,6 +76,7 @@
 (vim.api.nvim_set_keymap "n" "o" "o<esc>" {:noremap true})
 (vim.api.nvim_set_keymap "n" "O" "O<esc>" {:noremap true})
 (vim.api.nvim_set_keymap "n" "<c-e>" "<c-^>" {:noremap true})
+(vim.api.nvim_set_keymap "n" "<leader><cr>" ":nohlsearch<CR>" {:noremap true})
 
 ; Plugins
 (let [ctrlp (require :ctrlp)]

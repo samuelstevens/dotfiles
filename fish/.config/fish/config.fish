@@ -2,9 +2,13 @@
 set -gx EDITOR nvim
 
 # Set up path
+fish_add_path /usr/local/bin
 fish_add_path $HOME/.local/bin
 fish_add_path $HOME/.local/bin/scripts
 fish_add_path $HOME/.cargo/bin
+if test -d /usr/local/go
+    fish_add_path /usr/local/go/bin
+end
 
 # Pyenv
 set -gx PYENV_ROOT $HOME/.pyenv
