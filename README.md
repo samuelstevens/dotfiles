@@ -40,6 +40,14 @@ Then run your shell again (exit/ssh again, run `fish`, etc).
 
 [neovim](https://github.com/neovim/neovim/releases/)
 
+```sh
+mkdir -p ~/.local/pkg
+cd ~/.local/pkg
+curl --location https://github.com/neovim/neovim/releases/download/nightly/nvim-linux64.tar.gz -o nvim-linux64.tar.gz
+tar -xzvf nvim-linux64.tar.gz
+ln -s ~/.local/pkg/nvim-linux64/bin/nvim ~/.local/bin/nvim
+```
+
 Add python host provider:
 
 ```
