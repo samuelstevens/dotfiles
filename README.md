@@ -40,6 +40,8 @@ Then run your shell again (exit/ssh again, run `fish`, etc).
 
 [neovim](https://github.com/neovim/neovim/releases/)
 
+Add python host provider:
+
 ```
 mkdir -p ~/.local/venv
 cd ~/.local/venv
@@ -48,6 +50,32 @@ python -m venv nvim
 source nvim/bin/activate.fish
 
 pip install pynvim black 'python-lsp-server[all]'
+```
+
+Add packages:
+
+```
+mkdir -p ~/.local/share/nvim/site/pack/samstevens/start
+cd ~/.local/share/nvim/site/pack/samstevens/start
+git clone https://github.com/nvim-treesitter/nvim-treesitter.git
+```
+
+Install fennel:
+
+```sh
+mkdir -p ~/.local/pkg
+cd ~/.local/pkg
+curl --location https://fennel-lang.org/downloads/fennel-1.2.1-x86_64 -o fennel
+chmod +x fennel
+ln -s ~/.local/pkg/fennel ~/.local/bin/fennel
+```
+
+Compile fennel:
+
+```sh
+cd ~/.config/nvim
+mkdir -p lua
+make init.lua lua/ctrlp.lua lua/functions.lua
 ```
 
 [tmux](https://github.com/tmux/tmux/wiki/Installing#installing-tmux)
