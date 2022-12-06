@@ -7,12 +7,6 @@
 (fn exit-visual []
   (vim.api.nvim_feedkeys (vim.api.nvim_replace_termcodes "<esc>" true false true) "n" false))
 
-(fn get-line [row]
-  (. (vim.api.nvim_buf_get_lines 0 (- row 1) row true) 1))
-
-(fn set-line [row line]
-  (vim.api.nvim_buf_set_lines 0 (- row 1) row true [line]))
-
 (fn pair-of [open]
   (if (= open "`")
       "`"

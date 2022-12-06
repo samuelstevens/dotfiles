@@ -25,6 +25,8 @@ do
   local venv = (vim.env.HOME .. "/.local/venv/nvim")
   vimg("python3_host_prog", (venv .. "/bin/python"))
 end
+vimg("netrw_banner", 0)
+vimg("netrw_keepdir", 0)
 if vim.fn.executable("rg") then
   vimopt({grepprg = "rg --vimgrep $*", grepformat = "%f:%l:%c:%m"})
 else
@@ -42,9 +44,15 @@ vim.api.nvim_set_keymap("n", "o", "o<esc>", {noremap = true})
 vim.api.nvim_set_keymap("n", "O", "O<esc>", {noremap = true})
 vim.api.nvim_set_keymap("n", "<c-e>", "<c-^>", {noremap = true})
 vim.api.nvim_set_keymap("n", "<leader><cr>", ":nohlsearch<CR>", {noremap = true})
+vim.api.nvim_set_keymap("n", "gp", "vi(gx", {noremap = false})
+vim.api.nvim_set_keymap("n", "-", ":edit .<cr>", {noremap = false})
 do
   local ctrlp = require("ctrlp")
   ctrlp.setup("~/.fzf")
 end
-local surround = require("surround")
-return surround.setup()
+do
+  local surround = require("surround")
+  surround.setup()
+end
+local commented = require("commented")
+return commented.setup()

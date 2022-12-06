@@ -50,9 +50,11 @@
 (iabbrev "tehn" "then")
 (iabbrev "waht" "what")
 
-(vimg "mapleader" " ")
+(vimg :mapleader " ")
 (let [venv (.. vim.env.HOME "/.local/venv/nvim")]
-  (vimg "python3_host_prog" (.. venv "/bin/python")))
+  (vimg :python3_host_prog (.. venv "/bin/python")))
+(vimg :netrw_banner 0)
+(vimg :netrw_keepdir 0)
 
 ; Search
 (if (vim.fn.executable "rg")
@@ -78,8 +80,15 @@
 ; Keymaps
 (vim.api.nvim_set_keymap "n" "o" "o<esc>" {:noremap true})
 (vim.api.nvim_set_keymap "n" "O" "O<esc>" {:noremap true})
+; Switch to recent file
 (vim.api.nvim_set_keymap "n" "<c-e>" "<c-^>" {:noremap true})
+; Disable highlights
 (vim.api.nvim_set_keymap "n" "<leader><cr>" ":nohlsearch<CR>" {:noremap true})
+; Open links in parentheses
+(vim.api.nvim_set_keymap "n" "gp" "vi(gx" {:noremap false})
+
+; Make - open the 
+(vim.api.nvim_set_keymap "n" "-" ":edit .<cr>" {:noremap false})
 
 ; Plugins
 (let [ctrlp (require :ctrlp)]
@@ -87,3 +96,6 @@
 
 (let [surround (require :surround)]
   (surround.setup))
+
+(let [commented (require :commented)]
+  (commented.setup))
