@@ -1,7 +1,11 @@
 # Getting Started
 
-Install stow.
-Good luck.
+Install [stow](https://ftp.gnu.org/gnu/stow/) and extract the source code.
+
+```sh
+./configure --prefix=$HOME/.local
+make install
+```
 
 Install dotfiles:
 
