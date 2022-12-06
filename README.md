@@ -12,13 +12,24 @@ Install dotfiles:
 ```sh
 git clone https://github.com/samuelstevens/dotfiles.git ~/.dotfiles
 cd ~/.dotfiles
-stow --no-folding tmux
-stow --no-folding fish
-stow --no-folding ripgrep
-stow --no-folding nvim
-stow --no-folding lazygit
-stow --no-folding bash
+stow --target ~ lazygit
+stow --target ~ ripgrep
+stow --target ~ tmux
+stow --target ~ fish
+stow --target ~ bash
+stow --target ~ nvim
 ```
+
+You might need to remove some old Neovim configs:
+
+```sh
+cd ~/.local/share/nvim/site/pack/
+rm *
+mkdir samstevens/start
+cd samstevens/start
+git clone https://github.com/nvim-treesitter/nvim-treesitter.git
+```
+
 
 ## Install Required Tools
 
