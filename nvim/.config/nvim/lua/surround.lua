@@ -1,11 +1,9 @@
+local helpers = require("helpers")
 local function surrounded(left, text, right)
   return (left .. text .. right)
 end
 local function insert_ch(str, ch, pos)
   return (string.sub(str, 1, (pos - 1)) .. ch .. string.sub(str, pos))
-end
-local function exit_visual()
-  return vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<esc>", true, false, true), "n", false)
 end
 local function pair_of(open)
   if (open == "`") then
@@ -41,12 +39,12 @@ local function v_surround()
     local end_col = _let_3_[3]
     local _2 = _let_3_[4]
     local same_line = (end_row == start_row)
-    local start_line = __fnl_global__get_2dline(start_row)
+    local start_line = helpers["get-line"](start_row)
     local end_line
     if same_line then
       end_line = start_line
     else
-      end_line = __fnl_global__get_2dline(end_row)
+      end_line = helpers["get-line"](end_row)
     end
     local fixed_start = insert_ch(start_line, open_ch, start_col)
     local fixed_end
@@ -55,11 +53,11 @@ local function v_surround()
     else
       fixed_end = insert_ch(end_line, close_ch, (end_col + 1))
     end
-    __fnl_global__set_2dline(start_row, fixed_start)
-    __fnl_global__set_2dline(end_row, fixed_end)
+    helpers["set-line"](start_row, fixed_start)
+    helpers["set-line"](end_row, fixed_end)
   else
   end
-  return exit_visual()
+  return helpers["exit-visual"]()
 end
 local function setup()
   return vim.api.nvim_set_keymap("x", "s", "", {noremap = true, callback = v_surround})

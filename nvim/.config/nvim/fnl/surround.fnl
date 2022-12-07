@@ -1,11 +1,10 @@
+(local helpers (require :helpers))
+
 (fn surrounded [left text right]
   (.. left text right))
 
 (fn insert-ch [str ch pos]
   (.. (string.sub str 1 (- pos 1)) ch (string.sub str pos)))
-
-(fn exit-visual []
-  (vim.api.nvim_feedkeys (vim.api.nvim_replace_termcodes "<esc>" true false true) "n" false))
 
 (fn pair-of [open]
   (if (= open "`")
@@ -31,21 +30,20 @@
               [_ end-row end-col _] (vim.fn.getpos ".")
               same-line (= end-row start-row)
 
-              start-line (get-line start-row)
+              start-line (helpers.get-line start-row)
               end-line (if same-line 
                            start-line 
-                           (get-line end-row))
+                           (helpers.get-line end-row))
 
               fixed-start (insert-ch start-line open-ch start-col)
               fixed-end (if same-line 
                              (insert-ch fixed-start close-ch (+ end-col 2))
                              (insert-ch end-line close-ch (+ end-col 1)))]
-          (set-line start-row fixed-start)
-          (set-line end-row fixed-end)))
-    (exit-visual)))
+          (helpers.set-line start-row fixed-start)
+          (helpers.set-line end-row fixed-end)))
+    (helpers.exit-visual)))
 
 (fn setup []
   (vim.api.nvim_set_keymap "x" "s" "" {:noremap true :callback v-surround}))
-
 
 {:setup setup}
