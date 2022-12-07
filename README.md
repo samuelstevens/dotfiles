@@ -28,8 +28,8 @@ rm *
 mkdir samstevens/start
 cd samstevens/start
 git clone https://github.com/nvim-treesitter/nvim-treesitter.git
+git clone https://github.com/jaawerth/fennel.vim
 ```
-
 
 ## Install Required Tools
 
