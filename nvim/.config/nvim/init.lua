@@ -33,7 +33,7 @@ else
 end
 vim.api.nvim_set_keymap("n", "<leader>/", ":grep ", {noremap = true})
 local function treesitter_config()
-  return {ensure_installed = {"lua", "rust", "toml", "python", "fennel"}, auto_install = true, highlight = {enable = true, additional_vim_regex_highlighting = false}, indent = {enable = true}, rainbow = {enable = true, extended_mode = true, max_file_lines = nil}}
+  return {ensure_installed = {"lua", "rust", "toml", "python", "fennel"}, auto_install = true, highlight = {additional_vim_regex_highlighting = true, enable = false}, indent = {enable = false}, rainbow = {enable = true, extended_mode = true, max_file_lines = nil}}
 end
 do
   local treesitter = require("nvim-treesitter.configs")

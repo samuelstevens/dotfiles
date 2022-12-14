@@ -23,6 +23,9 @@ pyenv init - | source
 # ripgrep config
 set -gx RIPGREP_CONFIG_PATH $HOME/.config/ripgrep/ripgreprc
 
+# Use ripgrep for fzf
+set -gx FZF_DEFAULT_COMMAND rg --files
+
 if status --is-interactive
     if test -f /opt/homebrew/bin/brew
         # Source the homebrew goodies to get my path set up

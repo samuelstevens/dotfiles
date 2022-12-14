@@ -64,12 +64,9 @@
 (fn treesitter-config []
  {:ensure_installed [ "lua" "rust" "toml" "python" "fennel" ]
   :auto_install true
-  :highlight {:enable true
-  	      :additional_vim_regex_highlighting false}
-  :indent {:enable true}
-  :rainbow {:enable true
-  	    :extended_mode true
-	    :max_file_lines nil}})
+  :highlight {:enable false :additional_vim_regex_highlighting true}
+  :indent {:enable false}
+  :rainbow {:enable true :extended_mode true :max_file_lines nil}})
 
 (let [treesitter (require :nvim-treesitter.configs)]
   (treesitter.setup (treesitter-config)))
