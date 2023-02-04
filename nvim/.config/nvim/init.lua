@@ -32,14 +32,6 @@ if vim.fn.executable("rg") then
 else
 end
 vim.api.nvim_set_keymap("n", "<leader>/", ":grep ", {noremap = true})
-local function treesitter_config()
-  return {ensure_installed = {"lua", "rust", "toml", "python", "fennel"}, auto_install = true, highlight = {additional_vim_regex_highlighting = true, enable = false}, indent = {enable = false}, rainbow = {enable = true, extended_mode = true, max_file_lines = nil}}
-end
-do
-  local treesitter = require("nvim-treesitter.configs")
-  treesitter.setup(treesitter_config())
-end
-vimopt({foldmethod = "expr", foldexpr = "nvim_treesitter#foldexpr()"})
 vim.api.nvim_set_keymap("n", "o", "o<esc>", {noremap = true})
 vim.api.nvim_set_keymap("n", "O", "O<esc>", {noremap = true})
 vim.api.nvim_set_keymap("n", "<c-e>", "<c-^>", {noremap = true})
@@ -54,5 +46,9 @@ do
   local surround = require("surround")
   surround.setup()
 end
-local commented = require("commented")
-return commented.setup()
+do
+  local commented = require("commented")
+  commented.setup()
+end
+local leap = require("leap")
+return leap.add_default_mappings()

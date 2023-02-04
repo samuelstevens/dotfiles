@@ -61,19 +61,6 @@
     (vimopt {:grepprg "rg --vimgrep $*" :grepformat "%f:%l:%c:%m"}))
 (vim.api.nvim_set_keymap "n" "<leader>/" ":grep " {:noremap true})
 
-(fn treesitter-config []
- {:ensure_installed [ "lua" "rust" "toml" "python" "fennel" ]
-  :auto_install true
-  :highlight {:enable false :additional_vim_regex_highlighting true}
-  :indent {:enable false}
-  :rainbow {:enable true :extended_mode true :max_file_lines nil}})
-
-(let [treesitter (require :nvim-treesitter.configs)]
-  (treesitter.setup (treesitter-config)))
-
-(vimopt {:foldmethod "expr"
-         :foldexpr "nvim_treesitter#foldexpr()"})
-
 ; Keymaps
 (vim.api.nvim_set_keymap "n" "o" "o<esc>" {:noremap true})
 (vim.api.nvim_set_keymap "n" "O" "O<esc>" {:noremap true})
@@ -96,3 +83,6 @@
 
 (let [commented (require :commented)]
   (commented.setup))
+
+(let [leap (require :leap)]
+  (leap.add_default_mappings))

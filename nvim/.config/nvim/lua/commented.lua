@@ -8,18 +8,24 @@ local function get_prefix(filetype)
     return "# "
   elseif (filetype == "python") then
     return "# "
+  elseif (filetype == "toml") then
+    return "# "
   elseif (filetype == "fennel") then
     return "; "
   elseif (filetype == "c") then
     return "// "
+  elseif (filetype == "elm") then
+    return "-- "
   elseif (filetype == "lua") then
     return "-- "
+  elseif (filetype == "tex") then
+    return "% "
   else
     return "// "
   end
 end
 local function commented(line, prefix)
-  return string.gsub(line, "^(%s*)", ("%1" .. prefix))
+  return string.gsub(line, "^(%s*)", ("%1" .. escape(prefix)))
 end
 local function uncommented(line, prefix)
   return line:gsub(("^(%s*)" .. escape(prefix)), "%1", 1)
@@ -71,7 +77,7 @@ local function toggle_lines(rows)
     end
     return tbl_17_auto
   end
-  if core.all(core.debug(_7_())) then
+  if core.all(_7_()) then
     func = uncommented
   else
     func = commented

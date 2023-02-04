@@ -11,18 +11,24 @@
         "# "
         (= filetype "python")
         "# "
+        (= filetype "toml")
+        "# "
         (= filetype "fennel")
         "; "
         (= filetype "c")
         "// "
+        (= filetype "elm")
+        "-- "
         (= filetype "lua")
         "-- "
+        (= filetype "tex")
+        "% "
         ; Use // as generic comment prefix
         "// "))
 
 (fn commented [line prefix]
   ; Insert the prefix right before the first non-whitespace character.
-  (string.gsub line (.. "^(%s*)") (.. "%1" prefix)))
+  (string.gsub line (.. "^(%s*)") (.. "%1" (escape prefix))))
 
 (fn uncommented [line prefix]
   ; Remove the prefix (if any) that comes after all whitespace characters.
@@ -48,8 +54,8 @@
   (let [lines (collect [_ row (ipairs rows)]
                 (values row (helpers.get-line row)))
         prefix (get-prefix vim.bo.filetype)
-        func (if (core.all (core.debug (icollect [_ line (pairs lines)]
-                             (commented? line prefix))))
+        func (if (core.all (icollect [_ line (pairs lines)]
+                             (commented? line prefix)))
                  uncommented
                  commented)]
     (each [row line (pairs lines)]
