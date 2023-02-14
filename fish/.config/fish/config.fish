@@ -1,11 +1,16 @@
 # Editor should neovim
-set -gx EDITOR nvim
+if type --quiet hx
+    set -gx EDITOR hx
+else
+    set -gx EDITOR nvim
+end
 
 # Set up path
 fish_add_path /usr/local/bin
 fish_add_path $HOME/.local/bin
 fish_add_path $HOME/.local/bin/scripts
 fish_add_path $HOME/.cargo/bin
+fish_add_path $HOME/go/bin
 if test -d /usr/local/go
     fish_add_path /usr/local/go/bin
 end
