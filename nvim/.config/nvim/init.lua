@@ -39,8 +39,8 @@ vim.api.nvim_set_keymap("n", "<leader><cr>", ":nohlsearch<CR>", {noremap = true}
 vim.api.nvim_set_keymap("n", "gp", "vi(gx", {noremap = false})
 vim.api.nvim_set_keymap("n", "-", ":edit .<cr>", {noremap = false})
 do
-  local ctrlp = require("ctrlp")
-  ctrlp.setup("~/.fzf")
+  local filefinder = require("filefinder")
+  filefinder.setup("~/.fzf", "<leader>f")
 end
 do
   local surround = require("surround")

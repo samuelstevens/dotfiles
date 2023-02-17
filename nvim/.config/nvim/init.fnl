@@ -75,8 +75,8 @@
 (vim.api.nvim_set_keymap "n" "-" ":edit .<cr>" {:noremap false})
 
 ; Plugins
-(let [ctrlp (require :ctrlp)]
-  (ctrlp.setup "~/.fzf"))
+(let [filefinder (require :filefinder)]
+  (filefinder.setup "~/.fzf" "<leader>f"))
 
 (let [surround (require :surround)]
   (surround.setup))
