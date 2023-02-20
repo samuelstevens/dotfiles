@@ -1,9 +1,5 @@
 # Editor should neovim
-if type --quiet hx
-    set -gx EDITOR hx
-else
-    set -gx EDITOR nvim
-end
+set -gx EDITOR nvim
 
 # Set up path
 fish_add_path /usr/local/bin
@@ -13,6 +9,9 @@ fish_add_path $HOME/.cargo/bin
 fish_add_path $HOME/go/bin
 if test -d /usr/local/go
     fish_add_path /usr/local/go/bin
+end
+if test -d $HOME/.docker/bin
+    fish_add_path $HOME/.docker/bin
 end
 
 if test -d /usr/local/texlive/2022/bin/universal-darwin

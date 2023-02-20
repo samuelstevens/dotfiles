@@ -27,7 +27,10 @@ cd ~/.local/share/nvim/site/pack/
 rm *
 mkdir samstevens/start
 cd samstevens/start
-git clone https://github.com/nvim-treesitter/nvim-treesitter.git
+# Motion
+https://github.com/ggandor/leap.nvim
+# Syntax
+git clone https://github.com/khaveesh/vim-fish-syntax
 git clone https://github.com/jaawerth/fennel.vim
 ```
 
