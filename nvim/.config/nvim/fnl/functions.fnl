@@ -7,12 +7,5 @@
         (not (vim.bo.suffixesadd:match ext))
         (tset vim.bo :suffixesadd (.. vim.bo.suffixesadd "," ext)))))
 
-(fn create-augroup [autocmds name]
-  (vim.cmd (.. "augroup filetype_" name))
-  (vim.cmd "autocmd!")
-  (each [_ autocmd (ipairs autocmds)]
-    (vim.cmd (.. "autocmd " (table.concat autocmd " "))))
-  (vim.cmd "augroup END"))
-
 {:add-file-suffix add-file-suffix
  :create-augroup create-augroup}

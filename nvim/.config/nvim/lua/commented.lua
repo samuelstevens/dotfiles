@@ -18,6 +18,8 @@ local function get_prefix(filetype)
     return "-- "
   elseif (filetype == "lua") then
     return "-- "
+  elseif (filetype == "sql") then
+    return "-- "
   elseif (filetype == "tex") then
     return "% "
   else
@@ -52,10 +54,8 @@ local function toggle_lines(rows)
   do
     local tbl_14_auto = {}
     for _, row in ipairs(rows) do
-      local _4_, _5_ = row, helpers["get-line"](row)
-      if ((nil ~= _4_) and (nil ~= _5_)) then
-        local k_15_auto = _4_
-        local v_16_auto = _5_
+      local k_15_auto, v_16_auto = row, helpers["get-line"](row)
+      if ((k_15_auto ~= nil) and (v_16_auto ~= nil)) then
         tbl_14_auto[k_15_auto] = v_16_auto
       else
       end
@@ -64,7 +64,7 @@ local function toggle_lines(rows)
   end
   local prefix = get_prefix(vim.bo.filetype)
   local func
-  local function _7_()
+  local function _5_()
     local tbl_17_auto = {}
     local i_18_auto = #tbl_17_auto
     for _, line in pairs(lines) do
@@ -77,7 +77,7 @@ local function toggle_lines(rows)
     end
     return tbl_17_auto
   end
-  if core.all(_7_()) then
+  if core.all(_5_()) then
     func = uncommented
   else
     func = commented
@@ -89,16 +89,16 @@ local function toggle_lines(rows)
 end
 local function v_comment_toggle()
   do
-    local _let_10_ = vim.fn.getpos("v")
-    local _ = _let_10_[1]
-    local start = _let_10_[2]
-    local _0 = _let_10_[3]
-    local _1 = _let_10_[4]
-    local _let_11_ = vim.fn.getpos(".")
-    local _2 = _let_11_[1]
-    local _end = _let_11_[2]
-    local _3 = _let_11_[3]
-    local _4 = _let_11_[4]
+    local _let_8_ = vim.fn.getpos("v")
+    local _ = _let_8_[1]
+    local start = _let_8_[2]
+    local _0 = _let_8_[3]
+    local _1 = _let_8_[4]
+    local _let_9_ = vim.fn.getpos(".")
+    local _2 = _let_9_[1]
+    local _end = _let_9_[2]
+    local _3 = _let_9_[3]
+    local _4 = _let_9_[4]
     if (start < _end) then
       toggle_lines(core.range(start, _end))
     else

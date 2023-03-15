@@ -21,6 +21,8 @@
         "-- "
         (= filetype "lua")
         "-- "
+        (= filetype "sql")
+        "-- "
         (= filetype "tex")
         "% "
         ; Use // as generic comment prefix

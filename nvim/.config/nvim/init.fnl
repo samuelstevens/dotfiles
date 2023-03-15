@@ -71,8 +71,17 @@
 ; Open links in parentheses
 (vim.api.nvim_set_keymap "n" "gp" "vi(gx" {:noremap false})
 
-; Make - open the 
+; Make - open the directory explorer
 (vim.api.nvim_set_keymap "n" "-" ":edit .<cr>" {:noremap false})
+
+; Autocommands
+(let [functions (require :functions)]
+  (vim.api.nvim_create_autocmd
+    "BufEnter"
+    {:pattern "*"
+     :callback (fn [ev] (functions.add-file-suffix))}))
+
+
 
 ; Plugins
 (let [filefinder (require :filefinder)]

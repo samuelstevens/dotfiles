@@ -39,6 +39,13 @@ vim.api.nvim_set_keymap("n", "<leader><cr>", ":nohlsearch<CR>", {noremap = true}
 vim.api.nvim_set_keymap("n", "gp", "vi(gx", {noremap = false})
 vim.api.nvim_set_keymap("n", "-", ":edit .<cr>", {noremap = false})
 do
+  local functions = require("functions")
+  local function _2_(ev)
+    return functions["add-file-suffix"]()
+  end
+  vim.api.nvim_create_autocmd("BufEnter", {pattern = "*", callback = _2_})
+end
+do
   local filefinder = require("filefinder")
   filefinder.setup("~/.fzf", "<leader>f")
 end
