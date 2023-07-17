@@ -44,6 +44,6 @@
     (helpers.exit-visual)))
 
 (fn setup []
-  (vim.api.nvim_set_keymap "x" "s" "" {:noremap true :callback v-surround}))
+  (vim.api.nvim_set_keymap "x" "m" "" {:noremap true :callback v-surround}))
 
 {:setup setup}

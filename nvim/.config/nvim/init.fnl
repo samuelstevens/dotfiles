@@ -70,6 +70,11 @@
 (vim.api.nvim_set_keymap "n" "<leader><cr>" ":nohlsearch<CR>" {:noremap true})
 ; Open links in parentheses
 (vim.api.nvim_set_keymap "n" "gp" "vi(gx" {:noremap false})
+; Match some helix settings that I like a lot.
+(vim.keymap.set "" "ge" "G")
+(vim.keymap.set "" "gh" "0")
+(vim.keymap.set "" "gl" "$")
+(vim.keymap.set "" "ga" "<c-^>")
 
 ; Make - open the directory explorer
 (vim.api.nvim_set_keymap "n" "-" ":edit .<cr>" {:noremap false})

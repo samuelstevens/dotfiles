@@ -1,17 +1,31 @@
-theme = "solarized_light"
-
-[keys.normal]
-"o" = ["open_below", "normal_mode"]
-"O" = ["open_above", "normal_mode"]
+theme = "solarized_comments"
 
 [editor]
+true-color = true
 mouse = false
+auto-pairs = false
 
 [editor.cursor-shape]
 insert = "bar"
+
+[editor.whitespace.render]
+space = "none"
+tab = "all"
+newline = "all"
+# I don't know what these characters are. If they show
+# up in my files, I sure as hell want to see them.
+nbsp = "all"
+tabpad = "all"
+
+[editor.whitespace.characters]
+newline = "·"
 
 [editor.soft-wrap]
 enable = true
 max-wrap = 25 # increase value to reduce forced mid-word wrapping
 max-indent-retain = 0
 wrap-indicator = ""  # set wrap-indicator to "" to hide it
+
+[keys.normal]
+"o" = ["open_below", "normal_mode"]
+"O" = ["open_above", "normal_mode"]

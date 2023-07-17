@@ -60,6 +60,6 @@ local function v_surround()
   return helpers["exit-visual"]()
 end
 local function setup()
-  return vim.api.nvim_set_keymap("x", "s", "", {noremap = true, callback = v_surround})
+  return vim.api.nvim_set_keymap("x", "m", "", {noremap = true, callback = v_surround})
 end
 return {setup = setup}
