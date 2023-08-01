@@ -23,9 +23,10 @@ newline = "·"
 [editor.soft-wrap]
 enable = true
 max-wrap = 25 # increase value to reduce forced mid-word wrapping
-max-indent-retain = 0
+max-indent-retain = 20
 wrap-indicator = ""  # set wrap-indicator to "" to hide it
 
 [keys.normal]
 "o" = ["open_below", "normal_mode"]
 "O" = ["open_above", "normal_mode"]
+minus = "file_picker_in_current_buffer_directory"
