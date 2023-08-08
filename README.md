@@ -28,7 +28,7 @@ rm *
 mkdir samstevens/start
 cd samstevens/start
 # Motion
-https://github.com/ggandor/leap.nvim
+git clone https://github.com/ggandor/leap.nvim
 # Syntax
 git clone https://github.com/khaveesh/vim-fish-syntax
 git clone https://github.com/jaawerth/fennel.vim

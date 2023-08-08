@@ -10,6 +10,8 @@ local function get_prefix(filetype)
     return "# "
   elseif (filetype == "toml") then
     return "# "
+  elseif (filetype == "yaml") then
+    return "# "
   elseif (filetype == "fennel") then
     return "; "
   elseif (filetype == "c") then

@@ -34,9 +34,16 @@ end
 vim.api.nvim_set_keymap("n", "<leader>/", ":grep ", {noremap = true})
 vim.api.nvim_set_keymap("n", "o", "o<esc>", {noremap = true})
 vim.api.nvim_set_keymap("n", "O", "O<esc>", {noremap = true})
+vim.api.nvim_set_keymap("n", "<c-w>|", "<c-w>v", {noremap = true})
+vim.api.nvim_set_keymap("n", "<c-w>-", "<c-w>s", {noremap = true})
+vim.api.nvim_set_keymap("n", "<c-w>\\", "<c-w>v", {noremap = true})
+vim.api.nvim_set_keymap("n", "<c-w>_", "<c-w>s", {noremap = true})
 vim.api.nvim_set_keymap("n", "<c-e>", "<c-^>", {noremap = true})
+vim.api.nvim_set_keymap("n", "<tab>", ":bnext<CR>", {noremap = true})
+vim.api.nvim_set_keymap("n", "<s-tab>", ":bprev<CR>", {noremap = true})
 vim.api.nvim_set_keymap("n", "<leader><cr>", ":nohlsearch<CR>", {noremap = true})
 vim.api.nvim_set_keymap("n", "gp", "vi(gx", {noremap = false})
+cmd("command Striptrailingwhitespace %s/\\s\\+$//e")
 vim.keymap.set("", "ge", "G")
 vim.keymap.set("", "gh", "0")
 vim.keymap.set("", "gl", "$")
@@ -61,5 +68,8 @@ do
   local commented = require("commented")
   commented.setup()
 end
-local leap = require("leap")
-return leap.add_default_mappings()
+do
+  local leap = require("leap")
+  leap.add_default_mappings()
+end
+return vimg("python_highlight_builtins", 1)

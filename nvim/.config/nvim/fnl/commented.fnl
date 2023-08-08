@@ -13,6 +13,8 @@
         "# "
         (= filetype "toml")
         "# "
+        (= filetype "yaml")
+        "# "
         (= filetype "fennel")
         "; "
         (= filetype "c")

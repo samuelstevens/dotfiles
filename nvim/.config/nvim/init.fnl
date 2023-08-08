@@ -64,12 +64,25 @@
 ; Keymaps
 (vim.api.nvim_set_keymap "n" "o" "o<esc>" {:noremap true})
 (vim.api.nvim_set_keymap "n" "O" "O<esc>" {:noremap true})
+; Sane splits
+(vim.api.nvim_set_keymap "n" "<c-w>|" "<c-w>v" {:noremap true})
+(vim.api.nvim_set_keymap "n" "<c-w>-" "<c-w>s" {:noremap true})
+; (Sane splits with/without shift held down)
+(vim.api.nvim_set_keymap "n" "<c-w>\\" "<c-w>v" {:noremap true})
+(vim.api.nvim_set_keymap "n" "<c-w>_" "<c-w>s" {:noremap true})
+
 ; Switch to recent file
 (vim.api.nvim_set_keymap "n" "<c-e>" "<c-^>" {:noremap true})
+; Cycle files
+(vim.api.nvim_set_keymap "n" "<tab>" ":bnext<CR>" {:noremap true})
+(vim.api.nvim_set_keymap "n" "<s-tab>" ":bprev<CR>" {:noremap true})
 ; Disable highlights
 (vim.api.nvim_set_keymap "n" "<leader><cr>" ":nohlsearch<CR>" {:noremap true})
 ; Open links in parentheses
 (vim.api.nvim_set_keymap "n" "gp" "vi(gx" {:noremap false})
+; Removes trailing whitespace
+; Trailing /e is a flag to suppress error if there is no match
+(cmd "command Striptrailingwhitespace %s/\\s\\+$//e")
 ; Match some helix settings that I like a lot.
 (vim.keymap.set "" "ge" "G")
 (vim.keymap.set "" "gh" "0")
@@ -100,3 +113,6 @@
 
 (let [leap (require :leap)]
   (leap.add_default_mappings))
+
+; Syntax
+(vimg :python_highlight_builtins 1)
