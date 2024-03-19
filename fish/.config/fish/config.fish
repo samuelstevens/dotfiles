@@ -1,5 +1,5 @@
 # Editor should neovim
-set -gx EDITOR nvim
+set -gx EDITOR hx
 
 # Set up path
 fish_add_path /usr/local/bin

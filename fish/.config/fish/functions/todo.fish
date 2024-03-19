@@ -32,11 +32,16 @@ function todo_today
     $EDITOR $TODAY
 end
 
-function yesterday
+function todo_yesterday
     $EDITOR $YESTERDAY
 end
 
-function tomorrow
+function todo_tomorrow
+    if test -f $TODAY
+        if ! test -f $TOMORROW
+            cp $TODAY $TOMORROW
+        end
+    end
     $EDITOR $TOMORROW
 end
 
