@@ -2,7 +2,6 @@
 command = "ruff"
 args = ["server", "--preview"]
 
-
 [[language]]
 name = "python"
 language-servers = ["ruff"]
