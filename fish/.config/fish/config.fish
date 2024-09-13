@@ -24,6 +24,10 @@ end
 set -gx PYENV_ROOT $HOME/.pyenv
 fish_add_path $PYENV_ROOT/bin
 
+# Bun
+set -gx BUN_INSTALL $HOME/.bun
+fish_add_path $BUN_INSTALL/bin
+
 # ripgrep config
 set -gx RIPGREP_CONFIG_PATH $HOME/.config/ripgrep/ripgreprc
 
