@@ -16,34 +16,12 @@ stow --target ~ lazygit
 stow --target ~ ripgrep
 stow --target ~ tmux
 stow --target ~ fish
-stow --target ~ bash
-stow --target ~ nvim
+stow --target ~ helix
 ```
 
 You might need to remove some old Neovim configs:
 
-```sh
-cd ~/.local/share/nvim/site/pack/
-rm *
-mkdir samstevens/start
-cd samstevens/start
-# Motion
-git clone https://github.com/ggandor/leap.nvim
-# Syntax
-git clone https://github.com/khaveesh/vim-fish-syntax
-git clone https://github.com/jaawerth/fennel.vim
-```
-
 ## Install Required Tools
-
-[pyenv](https://github.com/pyenv/pyenv#basic-github-checkout)
-
-[Build dependencies](https://github.com/pyenv/pyenv/wiki#suggested-build-environment)
-
-```sh
- git clone https://github.com/pyenv/pyenv.git ~/.pyenv
- cd ~/.pyenv && src/configure && make -C src
-```
 
 [fzf](https://github.com/junegunn/fzf#using-git)
 
@@ -56,53 +34,6 @@ Then run your shell again (exit/ssh again, run `fish`, etc).
 
 ## Install Useful Tools
 
-[neovim](https://github.com/neovim/neovim/releases/)
-
-```sh
-mkdir -p ~/.local/pkg
-cd ~/.local/pkg
-curl --location https://github.com/neovim/neovim/releases/download/nightly/nvim-linux64.tar.gz -o nvim-linux64.tar.gz
-tar -xzvf nvim-linux64.tar.gz
-ln -s ~/.local/pkg/nvim-linux64/bin/nvim ~/.local/bin/nvim
-```
-
-Add python host provider:
-
-```
-mkdir -p ~/.local/venv
-cd ~/.local/venv
-python -m venv nvim
-
-source nvim/bin/activate.fish
-
-pip install pynvim black 'python-lsp-server[all]'
-```
-
-Add packages:
-
-```
-mkdir -p ~/.local/share/nvim/site/pack/samstevens/start
-cd ~/.local/share/nvim/site/pack/samstevens/start
-git clone https://github.com/nvim-treesitter/nvim-treesitter.git
-```
-
-Install fennel:
-
-```sh
-mkdir -p ~/.local/pkg
-cd ~/.local/pkg
-curl --location https://fennel-lang.org/downloads/fennel-1.2.1-x86_64 -o fennel
-chmod +x fennel
-ln -s ~/.local/pkg/fennel ~/.local/bin/fennel
-```
-
-Compile fennel:
-
-```sh
-cd ~/.config/nvim
-mkdir -p lua
-make init.lua lua/ctrlp.lua lua/functions.lua
-```
 
 [tmux](https://github.com/tmux/tmux/wiki/Installing#installing-tmux)
 
@@ -131,17 +62,4 @@ cd build
 cmake -DCMAKE_INSTALL_PREFIX=$HOME/.local ..
 make
 make install
-```
-
-## Using Nix For Tools
-
-```
-nix-env -iA nixpkgs.fish
-nix-env -iA nixpkgs.tmux
-nix-env -iA nixpkgs.fzf
-nix-env -iA nixpkgs.neovim
-nix-env -iA nixpkgs.ripgrep
-nix-env -iA nixpkgs.fd
-nix-env -iA nixpkgs.pv
-nix-env -iA nixpkgs.lazygit
 ```
