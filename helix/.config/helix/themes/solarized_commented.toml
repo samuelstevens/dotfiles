@@ -1,4 +1,4 @@
 inherits = "solarized_light"
 
-"comment" = { fg = "magenta", modifiers = ["bold"] }
+"comment" = { fg = "violet", modifiers = ["bold"] }
 "ui.virtual.jump-label" = { fg = "red", modifiers = ["bold"] }
