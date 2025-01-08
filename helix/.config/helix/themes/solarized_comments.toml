@@ -1,4 +1,0 @@
-inherits = "solarized_light"
-
-"comment" = { fg = "magenta", modifiers = ["bold"] }
-"ui.virtual.jump-label" = { fg = "red", modifiers = ["bold"] }
