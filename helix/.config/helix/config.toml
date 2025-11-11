@@ -30,3 +30,6 @@ enable = true
 max-wrap = 50 # increase value to reduce forced mid-word wrapping
 max-indent-retain = 40
 wrap-indicator = ""  # set wrap-indicator to "" to hide it
+
+[editor.lsp]
+display-inlay-hints = true
