@@ -1,4 +1,4 @@
-theme = "solarized_commented"
+theme = "onelight_brutalist"
 
 [keys.normal]
 "o" = ["open_below", "normal_mode"]
