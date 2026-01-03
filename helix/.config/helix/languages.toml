@@ -1,6 +1,10 @@
 [language-server.ruff]
-command = "ruff"
-args = ["server", "--preview"]
+command = "uvx"
+args = ["ruff", "server", "--preview"]
+
+[language-server.ty]
+command = "uvx"
+args= ["ty", "server"]
 
 [[language]]
 name = "python"

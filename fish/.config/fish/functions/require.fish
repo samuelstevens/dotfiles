@@ -1,5 +1,5 @@
 function require --description "check that a program is installed."
-    if test $(count $argv) -eq 0
+    if test (count $argv) -eq 0
         echo "Need at least one argument."
     end
 
