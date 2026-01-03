@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# Falls back to npx if not installed
+if command -v gemini-cli &>/dev/null; then
+    exec gemini-cli "$@"
+else
+    exec npx -y @google/gemini-cli@latest "$@"
+fi
