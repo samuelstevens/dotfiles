@@ -5,8 +5,9 @@ args = ["ruff", "server", "--preview"]
 [language-server.ty]
 command = "uvx"
 args= ["ty", "server"]
+config = { diagnosticMode = "off" }
 
 [[language]]
 name = "python"
-language-servers = ["ruff"]
+language-servers = ["ruff", "ty"]
 auto-format = true
