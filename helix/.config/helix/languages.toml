@@ -7,7 +7,50 @@ command = "uvx"
 args= ["ty", "server"]
 config = { diagnosticMode = "off" }
 
+[language-server.ty]
+command = "uvx"
+args= ["ty", "server"]
+
+[language-server.ty.config]
+diagnosticMode = "off"
+inlayHints = { variableTypes = false, callArgumentNames = false }
+
+[language-server.drafty]
+command = "drafty"
+args = ["lsp"]
+
+[language-server.tinymist]
+command = "tinymist"
+
+[language-server.bash-lsp]
+command = "bunx"
+args = ["--bunx", "bash-language-server", "start"]
+
+#############
+# Languages #
+#############
+
 [[language]]
 name = "python"
 language-servers = ["ruff", "ty"]
 auto-format = true
+
+
+[[language]]
+name = "markdown"
+language-servers = ["drafty"]
+
+
+[[language]]
+name = "latex"
+language-servers = ["drafty", "texlab"]
+
+
+[[language]]
+name = "typst"
+language-servers = ["drafty", "tinymist"]
+
+
+[[language]]
+name = "bash"
+language-servers = ["bash-lsp"]
