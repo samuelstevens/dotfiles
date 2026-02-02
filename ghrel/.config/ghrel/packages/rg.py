@@ -8,7 +8,7 @@ asset = {
     "darwin-arm64": "ripgrep-*-aarch64-apple-darwin.tar.gz",
 }
 binary = {
-    "linux-x86_64": "*",
+    "linux-x86_64": "ripgrep-*-x86_64-unknown-linux-musl/rg",
     "darwin-arm64": "*",
 }
 

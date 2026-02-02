@@ -8,7 +8,7 @@ asset = {
     "darwin-arm64": "jj-*-aarch64-apple-darwin.tar.gz",
 }
 binary = {
-    "linux-x86_64": "*",
+    "linux-x86_64": "jj",
     "darwin-arm64": "*",
 }
 

@@ -7,7 +7,7 @@ asset = {
     "darwin-arm64": "lazygit_*_darwin_arm64.tar.gz",
 }
 binary = {
-    "linux-x86_64": "*",
+    "linux-x86_64": "lazygit",
     "darwin-arm64": "*",
 }
 
