@@ -2,8 +2,9 @@ import re
 import subprocess
 
 pkg = "BurntSushi/ripgrep"
-asset = "ripgrep-*-aarch64-apple-darwin.tar.gz"
-binary = "ripgrep-*-aarch64-apple-darwin/rg"
+
+asset = {"linux-x86_64": "ripgrep-*-x86_64-unknown-linux-musl.tar.gz"}
+binary = {"linux-x86_64": "*"}
 
 
 def ghrel_verify(*, version: str, bin_name: str):

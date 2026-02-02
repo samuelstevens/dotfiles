@@ -2,6 +2,8 @@ import re
 import subprocess
 
 pkg = "jesseduffield/lazygit"
+asset = {"linux-x86_64": "lazygit_*_linux_x86_64.tar.gz"}
+binary = {"linux-x86_64": "*"}
 
 
 def ghrel_verify(*, version: str, bin_name: str):

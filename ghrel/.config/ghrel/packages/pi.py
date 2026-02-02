@@ -3,7 +3,8 @@ import shutil
 import subprocess
 
 pkg = "badlogic/pi-mono"
-binary = "pi/pi"
+asset = {"linux-x86_64": "pi-linux-x64.tar.gz"}
+binary = {"linux-x86_64": "pi/pi"}
 
 
 def ghrel_post_install(
