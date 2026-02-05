@@ -16,21 +16,67 @@
  *   - In pi: /reload
  */
 
+import { spawnSync } from "node:child_process";
+import * as fs from "node:fs";
+import * as os from "node:os";
+import * as path from "node:path";
+
 import type { ExtensionAPI, ExtensionContext } from "@mariozechner/pi-coding-agent";
 import { BorderedLoader } from "@mariozechner/pi-coding-agent";
 import { complete, type Api, type Model, type UserMessage } from "@mariozechner/pi-ai";
 import {
 	Editor,
 	type EditorTheme,
+	getEditorKeybindings,
 	Key,
 	matchesKey,
 	Text,
 	truncateToWidth,
 	type Component,
 	type TUI,
+	visibleWidth,
 	wrapTextWithAnsi,
 } from "@mariozechner/pi-tui";
 import { Type } from "@sinclair/typebox";
+
+function openExternalEditor(tui: TUI, currentText: string, cwd?: string): string | undefined {
+	const editorCmd = process.env.VISUAL || process.env.EDITOR;
+	if (!editorCmd) return undefined;
+
+	const tmpFile = path.join(os.tmpdir(), `pi-external-editor-${Date.now()}.md`);
+	let stopped = false;
+
+	try {
+		fs.writeFileSync(tmpFile, currentText, "utf-8");
+
+		tui.stop();
+		stopped = true;
+
+		const [editor, ...editorArgs] = editorCmd.split(" ");
+		const result = spawnSync(editor, [...editorArgs, tmpFile], {
+			stdio: "inherit",
+			cwd,
+			env: process.env,
+		});
+
+		if (result.status === 0) {
+			return fs.readFileSync(tmpFile, "utf-8").replace(/\n$/, "");
+		}
+	} finally {
+		try {
+			fs.unlinkSync(tmpFile);
+		} catch {
+			// Ignore cleanup errors
+		}
+		if (stopped) {
+			tui.start();
+			// Force full re-render since external editor likely used alternate screen
+			tui.requestRender(true);
+		}
+	}
+
+	return undefined;
+}
 
 // -----------------------------
 // Tool: questions
@@ -228,17 +274,28 @@ class QnAComponent implements Component {
 	private editor: Editor;
 	private tui: TUI;
 	private theme: any;
+	private keybindings: any;
+	private cwd: string;
 	private done: (result: string | null) => void;
 	private confirmSubmit = false;
 
 	private cachedWidth?: number;
 	private cachedLines?: string[];
 
-	constructor(questions: ExtractedQuestion[], tui: TUI, theme: any, done: (result: string | null) => void) {
+	constructor(
+		questions: ExtractedQuestion[],
+		tui: TUI,
+		theme: any,
+		keybindings: any,
+		cwd: string,
+		done: (result: string | null) => void,
+	) {
 		this.questions = questions;
 		this.answers = questions.map(() => "");
 		this.tui = tui;
 		this.theme = theme;
+		this.keybindings = keybindings;
+		this.cwd = cwd;
 		this.done = done;
 
 		const editorTheme: EditorTheme = {
@@ -298,13 +355,15 @@ class QnAComponent implements Component {
 	}
 
 	handleInput(data: string): void {
+		const editorKb = getEditorKeybindings();
+
 		// Submit confirmation.
 		if (this.confirmSubmit) {
-			if (matchesKey(data, Key.enter) || data.toLowerCase() === "y") {
+			if (editorKb.matches(data, "submit") || data.toLowerCase() === "y") {
 				this.submit();
 				return;
 			}
-			if (matchesKey(data, Key.escape) || matchesKey(data, Key.ctrl("c")) || data.toLowerCase() === "n") {
+			if (editorKb.matches(data, "selectCancel") || data.toLowerCase() === "n") {
 				this.confirmSubmit = false;
 				this.invalidate();
 				this.tui.requestRender();
@@ -314,8 +373,27 @@ class QnAComponent implements Component {
 		}
 
 		// Global cancel.
-		if (matchesKey(data, Key.escape) || matchesKey(data, Key.ctrl("c"))) {
+		if (editorKb.matches(data, "selectCancel")) {
 			this.cancel();
+			return;
+		}
+
+		// External editor (Ctrl+G by default).
+		if (this.keybindings?.matches?.(data, "externalEditor")) {
+			const updated = openExternalEditor(this.tui, this.editor.getText(), this.cwd);
+			if (updated !== undefined) {
+				this.editor.setText(updated);
+				this.invalidate();
+			}
+			this.tui.requestRender();
+			return;
+		}
+
+		// Newline (Ctrl+J, Shift+Enter, etc.) should never navigate.
+		if (data === "\n" || matchesKey(data, Key.ctrl("j")) || editorKb.matches(data, "newLine")) {
+			this.editor.handleInput(data === "\n" ? "\n" : data);
+			this.invalidate();
+			this.tui.requestRender();
 			return;
 		}
 
@@ -336,8 +414,8 @@ class QnAComponent implements Component {
 			return;
 		}
 
-		// Plain Enter moves forward; on last question it asks for confirmation.
-		if (matchesKey(data, Key.enter) && !matchesKey(data, Key.shift("enter"))) {
+		// Submit (Enter) moves forward; on last question it asks for confirmation.
+		if (editorKb.matches(data, "submit")) {
 			this.saveCurrentAnswer();
 			if (this.currentIndex < this.questions.length - 1) {
 				this.navigateTo(this.currentIndex + 1);
@@ -410,11 +488,12 @@ class QnAComponent implements Component {
 					theme.fg("dim", "(Enter/y to submit • Esc/n to keep editing)"),
 			);
 		} else {
+			const extHint = process.env.VISUAL || process.env.EDITOR ? " • Ctrl+G external editor" : "";
 			addLine(
 				lines,
 				theme.fg(
 					"dim",
-					" Tab/→ next • Shift+Tab/← prev • Enter next/confirm • Shift+Enter newline • Esc cancel",
+					` Tab/→ next • Shift+Tab/← prev • Enter next/confirm • Ctrl+J newline${extHint} • Esc cancel`,
 				),
 			);
 		}
@@ -461,8 +540,9 @@ export default function (pi: ExtensionAPI) {
 
 			const isMulti = questions.length > 1;
 			const totalTabs = questions.length + 1; // questions + Submit
+			const cwd = ctx.cwd;
 
-			const result = await ctx.ui.custom<QuestionsToolDetails>((tui, theme, _kb, done) => {
+			const result = await ctx.ui.custom<QuestionsToolDetails>((tui, theme, kb, done) => {
 				// State
 				let currentTab = 0;
 				let optionIndex = 0;
@@ -554,6 +634,24 @@ export default function (pi: ExtensionAPI) {
 							refresh();
 							return;
 						}
+
+						// External editor (Ctrl+G by default)
+						if (kb?.matches?.(data, "externalEditor")) {
+							const updated = openExternalEditor(tui, editor.getText(), cwd);
+							if (updated !== undefined) {
+								editor.setText(updated);
+							}
+							refresh();
+							return;
+						}
+
+						// Ctrl+J newline (some terminals send a dedicated ctrl+j key id)
+						if (matchesKey(data, Key.ctrl("j"))) {
+							editor.handleInput("\n");
+							refresh();
+							return;
+						}
+
 						editor.handleInput(data);
 						refresh();
 						return;
@@ -628,9 +726,26 @@ export default function (pi: ExtensionAPI) {
 					const q = currentQuestion();
 					const opts = currentOptions();
 
-					const add = (s: string) => lines.push(truncateToWidth(s, width));
+					const addLine = (s: string) => lines.push(truncateToWidth(s, width));
 
-					add(theme.fg("accent", "─".repeat(width)));
+					const addWrapped = (prefix: string, body: string) => {
+						const prefixWidth = visibleWidth(prefix);
+						const innerWidth = Math.max(1, width - prefixWidth);
+						const wrapped = wrapTextWithAnsi(body, innerWidth);
+
+						if (wrapped.length === 0) {
+							addLine(prefix);
+							return;
+						}
+
+						addLine(prefix + wrapped[0]);
+						const indent = " ".repeat(prefixWidth);
+						for (let i = 1; i < wrapped.length; i++) {
+							addLine(indent + wrapped[i]);
+						}
+					};
+
+					addLine(theme.fg("accent", "─".repeat(width)));
 
 					// Tab bar
 					if (isMulti) {
@@ -653,7 +768,7 @@ export default function (pi: ExtensionAPI) {
 							? theme.bg("selectedBg", theme.fg("text", submitText))
 							: theme.fg(canSubmit ? "success" : "dim", submitText);
 						tabs.push(`${submitStyled} →`);
-						add(` ${tabs.join("")}`);
+						addLine(` ${tabs.join("")}`);
 						lines.push("");
 					}
 
@@ -662,53 +777,59 @@ export default function (pi: ExtensionAPI) {
 							const opt = opts[i];
 							const selected = i === optionIndex;
 							const isOther = opt.isOther === true;
-							const prefix = selected ? theme.fg("accent", "> ") : "  ";
-							const color = selected ? "accent" : "text";
-							if (isOther && inputMode) {
-								add(prefix + theme.fg("accent", `${i + 1}. ${opt.label} ✎`));
-							} else {
-								add(prefix + theme.fg(color, `${i + 1}. ${opt.label}`));
-							}
+
+							const arrow = selected ? theme.fg("accent", "> ") : "  ";
+							const lineColor = isOther && inputMode ? "accent" : selected ? "accent" : "text";
+							const suffix = isOther && inputMode ? " ✎" : "";
+
+							const prefix = arrow + theme.fg(lineColor, `${i + 1}. `);
+							const label = theme.fg(lineColor, `${opt.label}${suffix}`);
+							addWrapped(prefix, label);
+
 							if (opt.description) {
-								add(`     ${theme.fg("muted", opt.description)}`);
+								addWrapped("     ", theme.fg("muted", opt.description));
 							}
 						}
 					}
 
 					// Content
 					if (inputMode && q) {
-						add(theme.fg("text", ` ${q.question}`));
+						addWrapped(" ", theme.fg("text", q.question));
 						lines.push("");
 						renderOptions();
 						lines.push("");
-						add(theme.fg("muted", " Your answer:"));
+						addLine(theme.fg("muted", " Your answer:"));
 						for (const line of editor.render(width - 2)) {
-							add(` ${line}`);
+							addLine(` ${line}`);
 						}
 						lines.push("");
-						add(theme.fg("dim", " Enter to submit • Esc to cancel"));
+						const extHint = process.env.VISUAL || process.env.EDITOR ? " • Ctrl+G external editor" : "";
+						addLine(theme.fg("dim", ` Enter to submit • Ctrl+J newline${extHint} • Esc to go back`));
 					} else if (currentTab === questions.length) {
-						add(theme.fg("accent", theme.bold(" Ready to submit")));
+						addLine(theme.fg("accent", theme.bold(" Ready to submit")));
 						lines.push("");
 						for (const question of questions) {
 							const answer = answers.get(question.id);
 							if (answer) {
-								const prefix = answer.wasCustom ? "(wrote) " : "";
-								add(`${theme.fg("muted", ` ${question.label}: `)}${theme.fg("text", prefix + answer.label)}`);
+								const left = theme.fg("muted", ` ${question.label}: `);
+								const right = answer.wasCustom
+									? theme.fg("muted", "(wrote) ") + theme.fg("text", answer.label)
+									: theme.fg("text", answer.label);
+								addWrapped(left, right);
 							}
 						}
 						lines.push("");
 						if (allAnswered()) {
-							add(theme.fg("success", " Press Enter to submit"));
+							addLine(theme.fg("success", " Press Enter to submit"));
 						} else {
 							const missing = questions
 								.filter((q) => !answers.has(q.id))
 								.map((q) => q.label)
 								.join(", ");
-							add(theme.fg("warning", ` Unanswered: ${missing}`));
+							addWrapped(" ", theme.fg("warning", `Unanswered: ${missing}`));
 						}
 					} else if (q) {
-						add(theme.fg("text", ` ${q.question}`));
+						addWrapped(" ", theme.fg("text", q.question));
 						lines.push("");
 						renderOptions();
 					}
@@ -718,9 +839,9 @@ export default function (pi: ExtensionAPI) {
 						const help = isMulti
 							? " Tab/←→ navigate • ↑↓ select • Enter confirm • Esc cancel"
 							: " ↑↓ navigate • Enter select • Esc cancel";
-						add(theme.fg("dim", help));
+						addLine(theme.fg("dim", help));
 					}
-					add(theme.fg("accent", "─".repeat(width)));
+					addLine(theme.fg("accent", "─".repeat(width)));
 
 					cachedLines = lines;
 					return lines;
@@ -859,8 +980,8 @@ export default function (pi: ExtensionAPI) {
 			return;
 		}
 
-		const answersText = await ctx.ui.custom<string | null>((tui, theme, _kb, done) => {
-			return new QnAComponent(extractionResult.questions, tui, theme, done);
+		const answersText = await ctx.ui.custom<string | null>((tui, theme, kb, done) => {
+			return new QnAComponent(extractionResult.questions, tui, theme, kb, ctx.cwd, done);
 		});
 
 		if (answersText === null) {
