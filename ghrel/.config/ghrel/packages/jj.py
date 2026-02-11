@@ -9,7 +9,7 @@ asset = {
 }
 binary = {
     "linux-x86_64": "jj",
-    "darwin-arm64": "*",
+    "darwin-arm64": "jj",
 }
 
 

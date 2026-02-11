@@ -4,11 +4,11 @@ import subprocess
 pkg = "cli/cli"
 asset = {
     "linux-x86_64": "gh_*_linux_amd64.tar.gz",
-    "darwin-arm64": "*",
+    "darwin-arm64": "gh_*_macOS_arm64.zip",
 }
 binary = {
     "linux-x86_64": "gh_*_linux_amd64/bin/gh",
-    "darwin-arm64": "*",
+    "darwin-arm64": "gh_*_macOS_arm64/bin/gh",
 }
 
 

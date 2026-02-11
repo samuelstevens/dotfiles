@@ -8,7 +8,7 @@ asset = {
 }
 binary = {
     "linux-x86_64": "lazygit",
-    "darwin-arm64": "*",
+    "darwin-arm64": "lazygit",
 }
 
 
