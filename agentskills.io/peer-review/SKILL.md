@@ -1,5 +1,5 @@
 ---
-name: oracle
+name: peer-review
 description: Ask another AI agent (Codex, Claude, Pi, Gemini) for feedback on ideas, designs, code, diffs, tests, or implementation plans. Use when you want a sanity check, critique, second opinion, or creative input from an external agent.
 ---
 

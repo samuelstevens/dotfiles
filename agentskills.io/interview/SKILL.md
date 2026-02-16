@@ -9,4 +9,4 @@ Ask questions incrementally, not in a single large block. Ask 1-6 questions at a
 
 Be very in-depth and continue interviewing the user continually until it's complete. Write the spec to the user-provided path. If no path is provided, infer from repo conventions and confirm the location before writing.
 
-If other agents are available, use the oracle skill to get feedback. After getting agent feedback, if there are non-obvious answers or non-trivial changes, continue interviewing the user and getting agent feedback until you feel you have addressed all concerns.
+If other agents are available, use the peer-review skill to get feedback. After getting agent feedback, if there are non-obvious answers or non-trivial changes, continue interviewing the user and getting agent feedback until you feel you have addressed all concerns.
