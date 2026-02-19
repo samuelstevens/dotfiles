@@ -62,7 +62,7 @@
 "ui.virtual.inlay-hint" = { fg = "grey-500" }
 "ui.virtual.inlay-hint.parameter" = { fg = "grey-500", modifiers = ["italic"] }
 "ui.virtual.inlay-hint.type" = { fg = "grey-500" }
-"ui.virtual.jump-label" = { fg = "black", bg = "grey-200", modifiers = ["bold" ] }
+"ui.virtual.jump-label" = { fg = "red", modifiers = ["bold"] }
 
 "ui.menu" = { fg = "black", bg = "grey-300" }
 "ui.menu.selected" = { fg = "white", bg = "light-blue" }
