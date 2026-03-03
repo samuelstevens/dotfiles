@@ -1,15 +1,14 @@
 import subprocess
 import re
 
-pkg = "cpcloud/micasa"
-
+pkg = "zellij-org/zellij"
 asset = {
-    "linux-x86_64": "micasa_linux_amd64.tar.gz",
-    "darwin-arm64": "micasa_darwin_arm64.tar.gz",
+    "linux-x86_64": "zellij-x86_64-unknown-linux-musl.tar.gz",
+    "darwin-arm64": "zellij-aarch64-apple-darwin.tar.gz",
 }
 binary = {
     "linux-x86_64": "*",
-    "darwin-arm64": "micasa",
+    "darwin-arm64": "*",
 }
 
 
@@ -20,4 +19,4 @@ def ghrel_verify(*, version: str, bin_name: str):
     stdout = result.stdout.strip()
     assert stdout
 
-    assert re.search(r"^[\d\.]*$", stdout)
+    assert re.search(r"^zellij [\d\.]*$", stdout)
