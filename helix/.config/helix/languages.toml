@@ -5,11 +5,6 @@ args = ["ruff", "server", "--preview"]
 [language-server.ty]
 command = "uvx"
 args= ["ty", "server"]
-config = { diagnosticMode = "off" }
-
-[language-server.ty]
-command = "uvx"
-args= ["ty", "server"]
 
 [language-server.ty.config]
 diagnosticMode = "off"
