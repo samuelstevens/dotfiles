@@ -8,7 +8,7 @@ asset = {
 }
 binary = {
     "linux-x86_64": "fd-*-x86_64-unknown-linux-musl/fd",
-    "darwin-arm64": "*",
+    "darwin-arm64": "fd-v10.4.2-aarch64-apple-darwin/fd",
 }
 
 
