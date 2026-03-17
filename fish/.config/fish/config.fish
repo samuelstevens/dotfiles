@@ -34,6 +34,12 @@ set -gx RIPGREP_CONFIG_PATH $HOME/.config/ripgrep/ripgreprc
 # Use ripgrep for fzf
 set -gx FZF_DEFAULT_COMMAND rg --files
 
+if not set -q GITHUB_TOKEN
+    if command -q gh
+        set -gx GITHUB_TOKEN (gh auth token 2>/dev/null)
+    end
+end
+
 if status --is-interactive
     if test -f /opt/homebrew/bin/brew
         # Source the homebrew goodies to get my path set up
@@ -50,6 +56,10 @@ if status --is-interactive
     set -gx fish_cursor_visual line
     # Force fish to adjust cursor shape in tmux
     set -g fish_vi_force_cursor 1
+
+    if command -q fzf
+        fzf --fish | source
+    end
 
     set fish_greeting ''
 end
