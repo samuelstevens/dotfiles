@@ -5,10 +5,14 @@ pkg = "cpcloud/micasa"
 
 asset = {
     "linux-x86_64": "micasa_linux_amd64.tar.gz",
+    "linux-arm64": "micasa_linux_arm64.tar.gz",
+    "darwin-x86_64": "micasa_darwin_amd64.tar.gz",
     "darwin-arm64": "micasa_darwin_arm64.tar.gz",
 }
 binary = {
-    "linux-x86_64": "*",
+    "linux-x86_64": "micasa",
+    "linux-arm64": "micasa",
+    "darwin-x86_64": "micasa",
     "darwin-arm64": "micasa",
 }
 
