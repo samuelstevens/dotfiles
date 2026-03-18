@@ -17,6 +17,8 @@ stow --target ~ ripgrep
 stow --target ~ tmux
 stow --target ~ fish
 stow --target ~ helix
+stow --target ~ kitty
+stow --target ~ ghrel
 ```
 
 You might need to remove some old Neovim configs:
