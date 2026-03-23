@@ -19,6 +19,7 @@ stow --target ~ fish
 stow --target ~ helix
 stow --target ~ kitty
 stow --target ~ ghrel
+stow --target ~ codex
 ```
 
 You might need to remove some old Neovim configs:
