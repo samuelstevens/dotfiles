@@ -2,6 +2,7 @@ import os
 import pathlib
 import re
 import shutil
+import stat
 import subprocess
 import time
 
@@ -43,6 +44,7 @@ def ghrel_post_install(
     staging_dpath = base_dpath / f"fish.new.{timestamp}"
     assert not staging_dpath.exists()
     shutil.copytree(install_root, staging_dpath)
+    _ensure_executable(staging_dpath / "bin" / "fish")
 
     if install_dpath.exists():
         if install_dpath.is_symlink():
@@ -74,6 +76,18 @@ def _find_install_root(extracted_dir: pathlib.Path) -> pathlib.Path:
     matches = list(extracted_dir.glob("fish-*.app/Contents/Resources/base/usr/local"))
     assert len(matches) == 1, f"expected one fish install root, found {len(matches)}"
     return matches[0]
+
+
+def _ensure_executable(path: pathlib.Path) -> None:
+    mode = path.stat().st_mode
+    exec_bits = 0
+    if mode & stat.S_IRUSR:
+        exec_bits |= stat.S_IXUSR
+    if mode & stat.S_IRGRP:
+        exec_bits |= stat.S_IXGRP
+    if mode & stat.S_IROTH:
+        exec_bits |= stat.S_IXOTH
+    path.chmod(mode | exec_bits)
 
 
 def ghrel_verify(*, version: str, bin_name: str):
