@@ -40,13 +40,16 @@ Then run your shell again (exit/ssh again, run `fish`, etc).
 
 [tmux](https://github.com/tmux/tmux/wiki/Installing#installing-tmux)
 
-```
+Ubuntu 22.04 `apt` only provides `tmux 3.2a`, so install a newer release from source into `~/.local`:
+
+```sh
 mkdir -p ~/.local/src
 cd ~/.local/src
-wget https://github.com/tmux/tmux/releases/download/3.3a/tmux-3.3a.tar.gz
-tar -xf tmux-3.3a.tar.gz
-cd tmux-3.3a
-./configure --prefix ~/.local && make
+curl -L -o tmux-3.6a.tar.gz https://github.com/tmux/tmux/releases/download/3.6a/tmux-3.6a.tar.gz
+tar -xzf tmux-3.6a.tar.gz
+cd tmux-3.6a
+./configure --prefix="$HOME/.local"
+make -j"$(nproc)"
 make install
 ```
 
