@@ -1,7 +1,0 @@
-#!/usr/bin/env bash
-# Falls back to npx if not installed
-if [[ -x "$HOME/.cargo/bin/codex" ]]; then
-    exec "$HOME/.cargo/bin/codex" "$@"
-else
-    exec bunx --bun @openai/codex@latest "$@"
-fi

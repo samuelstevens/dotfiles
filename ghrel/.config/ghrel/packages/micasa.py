@@ -1,5 +1,5 @@
-import subprocess
 import re
+import subprocess
 
 pkg = "cpcloud/micasa"
 
@@ -24,4 +24,4 @@ def ghrel_verify(*, version: str, bin_name: str):
     stdout = result.stdout.strip()
     assert stdout
 
-    assert re.search(r"^[\d\.]*$", stdout)
+    assert re.search(r"^micasa .* [\d\.]*$", stdout)
