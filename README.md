@@ -12,14 +12,14 @@ Install dotfiles:
 ```sh
 git clone https://github.com/samuelstevens/dotfiles.git ~/.dotfiles
 cd ~/.dotfiles
-stow --target ~ lazygit
-stow --target ~ ripgrep
-stow --target ~ tmux
-stow --target ~ fish
-stow --target ~ helix
-stow --target ~ kitty
-stow --target ~ ghrel
-stow --target ~ codex
+uv run stow-all.py
+```
+
+List packages or preview changes first:
+
+```sh
+uv run stow-all.py --list
+uv run stow-all.py --dry-run
 ```
 
 You might need to remove some old Neovim configs:
