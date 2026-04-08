@@ -15,7 +15,8 @@ The pattern is:
 Shared skills live here:
 
 - `agentskills.io/interview/`
-- `agentskills.io/peer-review/`
+- `agentskills.io/<SKILLNAME>/`
+- ...
 
 Agent-specific symlinks point back to those shared directories:
 
@@ -45,10 +46,12 @@ description: Do X. Use when the user asks for Y or Z.
 # My Skill
 
 ## When to use
+
 - Case 1
 - Case 2
 
 ## Workflow
+
 1. Do the first thing
 2. Check the result
 3. Use helper scripts or references if needed
@@ -68,6 +71,46 @@ uv run stow-all.py codex claude
 ```
 
 5. Restart the agents.
+
+## Add A Shared Skill From `npm:skills`
+
+The `skills` CLI is useful for discovery, but its default install model is agent-specific. In this repo, that is not the source of truth for shared skills.
+
+If a skill should be shared across agents, prefer this pattern:
+
+1. Use `skills` to find the package or confirm its repository:
+
+```sh
+uvx deno -A npm:skills add marimo-team/marimo-pair --list
+```
+
+2. Put the canonical copy in `agentskills.io/` instead of installing it separately into each agent-managed skills directory. In practice, that usually means cloning the upstream repo into this directory:
+
+```sh
+git clone https://github.com/marimo-team/marimo-pair.git agentskills.io/marimo-pair
+```
+
+3. Symlink that shared directory into each agent that should see it:
+
+```sh
+ln -s ../../../agentskills.io/marimo-pair codex/.codex/skills/marimo-pair
+ln -s ../../../agentskills.io/marimo-pair claude/.claude/skills/marimo-pair
+ln -s ../../../../agentskills.io/marimo-pair pi/.pi/agent/skills/marimo-pair
+```
+
+4. Restow the affected packages:
+
+```sh
+uv run stow-all.py codex claude pi
+```
+
+5. Restart the agents so they rediscover the new skill.
+
+### Why not `skills add` per agent?
+
+For this repo, per-agent installs are only appropriate when a skill should live in one agent's private directory and be managed independently there.
+
+For shared skills, per-agent installs create duplication and make updates harder because there is no single canonical copy in the repo. `agentskills.io/` plus symlinks is the preferred pattern.
 
 ## Notes
 
