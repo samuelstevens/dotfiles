@@ -1,6 +1,6 @@
 {
   "lastChangelogVersion": "0.68.1",
-  "theme": "my-light",
+  "theme": "light",
   "enabledModels": [
     "openai-codex/gpt-5.4"
   ],
