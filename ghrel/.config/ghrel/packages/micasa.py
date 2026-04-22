@@ -1,7 +1,7 @@
 import re
 import subprocess
 
-pkg = "cpcloud/micasa"
+pkg = "micasa-dev/micasa"
 
 asset = {
     "linux-x86_64": "micasa_linux_amd64.tar.gz",

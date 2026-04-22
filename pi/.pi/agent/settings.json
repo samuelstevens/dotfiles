@@ -1,0 +1,8 @@
+{
+  "lastChangelogVersion": "0.68.1",
+  "theme": "my-light",
+  "enabledModels": [
+    "openai-codex/gpt-5.4"
+  ],
+  "defaultThinkingLevel": "xhigh"
+}
