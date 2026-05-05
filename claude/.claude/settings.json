@@ -1,8 +1,9 @@
 {
-  "effortLevel": "high",
-  "skipDangerousModePermissionPrompt": true,
   "attribution": {
     "commit": "",
     "pr": ""
-  }
+  },
+  "effortLevel": "high",
+  "skipDangerousModePermissionPrompt": true,
+  "theme": "light"
 }
