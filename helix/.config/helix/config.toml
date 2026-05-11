@@ -1,4 +1,4 @@
-theme = "onelight_brutalist"
+theme = "onelight"
 
 [keys.normal]
 "o" = ["open_below", "normal_mode"]
