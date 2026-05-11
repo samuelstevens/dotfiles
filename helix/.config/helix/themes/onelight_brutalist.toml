@@ -1,0 +1,119 @@
+# Helix theme: Brutal OneLight
+# https://docs.helix-editor.com/themes.html#scopes
+# https://github.com/helix-editor/helix/blob/master/runtime/themes/onelight.toml
+# https://tonsky.me/blog/syntax-highlighting/
+# Original Author : erasin<erasinoo@gmail.com>
+# Brutalist Author: samuelstevens<samuel.robert.stevens@gmail.com>
+
+"comment" = { fg = "violet", modifiers = ["bold"] }
+"constant" = { fg = "green" }
+"string" = { fg = "cyan" }
+"punctuation" = { fg = "grey-500" }
+"keyword" = { fg = "blue" }
+
+"diff.plus" = { fg = "green" }
+"diff.delta" = { fg = "yellow" }
+"diff.minus" = { fg = "red" }
+
+# Markup
+"markup.heading" = { fg = "blue", modifiers = ["bold"] }
+
+# UI
+"ui.background" = { bg = "white" }
+"ui.background.separator" = { bg = "white" }
+
+"ui.cursor" = { fg = "white", bg = "grey" }
+"ui.cursor.normal" = { fg = "white", bg = "grey" }
+"ui.cursor.insert" = { fg = "white", bg = "grey" }
+"ui.cursor.select" = { fg = "white", bg = "grey" }
+"ui.cursor.match" = { bg = "grey-300", modifiers = ["bold"] }
+"ui.cursor.primary" = { fg = "white", bg = "black" }
+"ui.cursor.primary.normal" = { fg = "white", bg = "black" }
+"ui.cursor.primary.insert" = { fg = "red", bg = "black" }
+"ui.cursor.primary.select" = { fg = "white", bg = "black" }
+
+"ui.gutter" = { fg = "grey-500" }
+"ui.gutter.selected" = { fg = "black" }
+
+"ui.linenr" = { fg = "grey-500" }
+"ui.linenr.selected" = { fg = "black", modifiers = ["bold"] }
+
+"ui.statusline" = { fg = "black", bg = "grey-300" }
+"ui.statusline.inactive" = { fg = "grey", bg = "grey-200" }
+"ui.statusline.normal" = { fg = "grey-300", bg = "light-blue" }
+"ui.statusline.insert" = { fg = "grey-300", bg = "green" }
+"ui.statusline.select" = { fg = "grey-300", bg = "purple" }
+
+"ui.popup" = { fg = "black", bg = "grey-200" }
+"ui.popup.info" = { fg = "black", bg = "grey-200" }
+"ui.window" = { fg = "grey-500", bg = "grey-100" }
+"ui.help" = { fg = "black", bg = "grey-200" }
+
+"ui.text" = { fg = "black" }
+"ui.text.focus" = { fg = "red", bg = "grey-300", modifiers = ["bold"] }
+"ui.text.inactive" = { fg = "grey" }
+"ui.text.info" = { fg = "black" }
+
+"ui.virtual" = { fg = "grey-500" }
+"ui.virtual.ruler" = { bg = "grey-200" }
+"ui.virtual.wrap" = { fg = "grey-500" }
+"ui.virtual.whitespace" = { fg = "grey-400" }
+"ui.virtual.indent-guide" = { fg = "grey-500" }
+"ui.virtual.inlay-hint" = { fg = "grey-500" }
+"ui.virtual.inlay-hint.parameter" = { fg = "grey-500", modifiers = ["italic"] }
+"ui.virtual.inlay-hint.type" = { fg = "grey-500" }
+"ui.virtual.jump-label" = { fg = "red", modifiers = ["bold"] }
+
+"ui.menu" = { fg = "black", bg = "grey-300" }
+"ui.menu.selected" = { fg = "white", bg = "light-blue" }
+"ui.menu.scroll" = { fg = "light-blue", bg = "white" }
+
+"ui.selection" = { bg = "grey-300", modifiers = ["dim"] }
+"ui.selection.primary" = { bg = "grey-300" }
+
+"ui.cursorline.primary" = { fg = "white", bg = "grey-100" }
+"ui.cursorline.secondary" = { fg = "white", bg = "grey-200" }
+
+"ui.cursorcolumn.primary" = { fg = "white", bg = "grey-100" }
+"ui.cursorcolumn.secondary" = { fg = "white", bg = "grey-200" }
+
+"ui.highlight" = { bg = "grey-300" }
+
+"ui.picker.header" = { fg = "purple"}
+"ui.picker.header.column.active" = { fg = "blue"}
+
+"diagnostic.info" = { underline = { color = "blue", style = "dotted" } }
+"diagnostic.hint" = { underline = { color = "green", style = "dashed" } }
+"diagnostic.warning" = { underline = { color = "yellow", style = "curl" } }
+"diagnostic.error" = { underline = { color = "red", style = "curl" } }
+"diagnostic.unnecessary" = { modifiers = ["dim"] }
+"diagnostic.deprecated" = { modifiers = ["crossed_out"] }
+
+"info" = { fg = "blue", modifiers = ["bold"] }
+"hint" = { fg = "green", modifiers = ["bold"] }
+"warning" = { fg = "yellow", modifiers = ["bold"] }
+"error" = { fg = "red", modifiers = ["bold"] }
+
+"tabstop" = { modifiers = ["italic"], bg = "grey-300" }
+
+[palette]
+white = "#FAFAFA"
+yellow = "#FF6F00"
+gold = "#D35400"
+brown = "#795548"
+blue = "#0061FF"
+light-blue = "#0091EA"
+red = "#D50000"
+pink = "#C2185B"
+purple = "#B500A9"
+deep-purple = "#651FFF"
+green = "#24A443"
+cyan = "#0086C1"
+violet = "#6C71C4"
+black = "#282C34"
+grey = "#5C6370"
+grey-500 = "#9E9E9E"
+grey-400 = "#BDBDBD"
+grey-300 = "#E0E0E0"
+grey-200 = "#EEEEEE"
+grey-100 = "#F2F2F2"
