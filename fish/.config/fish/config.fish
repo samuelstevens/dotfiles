@@ -30,6 +30,7 @@ fish_add_path $BUN_INSTALL/bin
 
 # ripgrep config
 set -gx RIPGREP_CONFIG_PATH $HOME/.config/ripgrep/ripgreprc
+set -gx TODO_CONFIG $HOME/.config/todo/config
 
 # Use ripgrep for fzf
 set -gx FZF_DEFAULT_COMMAND rg --files
