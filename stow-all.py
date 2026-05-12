@@ -48,6 +48,13 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
         help="Show the stow commands without making changes.",
     )
     parser.add_argument(
+        "--skip",
+        nargs="+",
+        default=[],
+        metavar="PACKAGE",
+        help="Packages to omit from the selected packages.",
+    )
+    parser.add_argument(
         "--list", action="store_true", help="Print detected packages and exit."
     )
     return parser.parse_args(argv)
@@ -62,8 +69,8 @@ def main(argv: list[str]) -> int:
             print(package)
         return 0
 
-    packages = args.packages or detected_packages
-    missing = sorted(set(packages) - set(detected_packages))
+    selected_packages = args.packages or detected_packages
+    missing = sorted((set(selected_packages) | set(args.skip)) - set(detected_packages))
     if missing:
         print(f"Unknown package(s): {', '.join(missing)}", file=sys.stderr)
         print(
@@ -72,8 +79,9 @@ def main(argv: list[str]) -> int:
         )
         return 2
 
+    packages = [package for package in selected_packages if package not in args.skip]
     if not packages:
-        print("No stow packages found.", file=sys.stderr)
+        print("No stow packages selected.", file=sys.stderr)
         return 1
 
     target = Path(args.target).expanduser().resolve()
@@ -88,7 +96,8 @@ def main(argv: list[str]) -> int:
         if result.returncode != 0:
             print(f"`stow` failed for package `{package}`.", file=sys.stderr)
             print(
-                f"Re-run with a narrower selection, for example `uv run stow-all.py {package}`.",
+                f"Re-run with `uv run stow-all.py --skip {package}` to skip it, "
+                f"or `uv run stow-all.py {package}` to inspect only that package.",
                 file=sys.stderr,
             )
             return result.returncode

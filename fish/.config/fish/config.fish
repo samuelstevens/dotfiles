@@ -58,9 +58,5 @@ if status --is-interactive
     # Force fish to adjust cursor shape in tmux
     set -g fish_vi_force_cursor 1
 
-    if command -q fzf
-        fzf --fish | source
-    end
-
     set fish_greeting ''
 end
