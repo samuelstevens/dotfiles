@@ -1,14 +1,14 @@
 theme = "onelight_brutalist"
 
-[keys.normal]
-"o" = ["open_below", "normal_mode"]
-"O" = ["open_above", "normal_mode"]
-minus = "file_picker_in_current_buffer_directory"
-
 [editor]
 true-color = true
 mouse = false
 auto-pairs = false
+# Ignore all workspace trust stuff
+insecure = true
+
+inline-completion-timeout = 150
+inline-completion-auto-trigger = true
 
 [editor.cursor-shape]
 insert = "bar"
@@ -33,3 +33,15 @@ wrap-indicator = ""  # set wrap-indicator to "" to hide it
 
 [editor.lsp]
 display-inlay-hints = true
+
+[keys.normal]
+"o" = ["open_below", "normal_mode"]
+"O" = ["open_above", "normal_mode"]
+minus = "file_picker_in_current_buffer_directory"
+
+[keys.insert]
+tab = "inline_completion_accept"
+C-space = "inline_completion_trigger"
+C-e = "inline_completion_dismiss"
+C-n = "inline_completion_next"
+C-p = "inline_completion_prev"

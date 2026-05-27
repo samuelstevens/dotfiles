@@ -21,31 +21,54 @@ command = "tinymist"
 command = "bunx"
 args = ["--bunx", "bash-language-server", "start"]
 
+[language-server.copilot]
+command = "copilot-language-server"
+args = ["--stdio"]
+
+[language-server.copilot.config]
+editorPluginInfo = { name = "helix-inline-completion", version = "0.1.0" }
+
+[language-server.copilot.config.github.copilot]
+enable = { "*" = true }
+advanced = {}
+
+[language-server.copilot.config."github-enterprise"]
+
+[language-server.copilot.config.http]
+
+[language-server.copilot.config.telemetry]
+telemetryLevel = "off"
+
 #############
 # Languages #
 #############
 
 [[language]]
 name = "python"
-language-servers = ["ruff", "ty"]
+language-servers = ["ruff", "ty", "copilot"]
 auto-format = true
 
 
 [[language]]
 name = "markdown"
-language-servers = ["drafty"]
+language-servers = ["drafty", "copilot"]
 
 
 [[language]]
 name = "latex"
-language-servers = ["drafty", "texlab"]
+language-servers = ["drafty", "texlab", "copilot"]
 
 
 [[language]]
 name = "typst"
-language-servers = ["drafty", "tinymist"]
+language-servers = ["drafty", "tinymist", "copilot"]
 
 
 [[language]]
 name = "bash"
-language-servers = ["bash-lsp"]
+language-servers = ["bash-lsp", "copilot"]
+
+
+[[language]]
+name = "rust"
+language-servers = ["rust-analyzer", "copilot"]

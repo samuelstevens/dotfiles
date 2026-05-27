@@ -37,6 +37,34 @@ Then run your shell again (exit/ssh again, run `fish`, etc).
 
 ## Install Useful Tools
 
+### Helix
+
+Helix is intentionally not managed by `ghrel`. Use the fork with inline
+completion support instead:
+
+```sh
+mkdir -p ~/.local/src ~/.local/bin
+git clone https://github.com/samuelstevens/helix.git ~/.local/src/helix
+cd ~/.local/src/helix
+cargo build --release -p helix-term
+cp target/release/hx ~/.local/bin/hx
+codesign --force --sign - ~/.local/bin/hx  # macOS
+rm -rf ~/.config/helix/runtime
+cp -R runtime ~/.config/helix/runtime
+```
+
+To update:
+
+```sh
+cd ~/.local/src/helix
+git pull --ff-only
+cargo build --release -p helix-term
+cp target/release/hx ~/.local/bin/hx
+codesign --force --sign - ~/.local/bin/hx  # macOS
+rm -rf ~/.config/helix/runtime
+cp -R runtime ~/.config/helix/runtime
+```
+
 
 [tmux](https://github.com/tmux/tmux/wiki/Installing#installing-tmux)
 
