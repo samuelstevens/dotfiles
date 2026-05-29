@@ -1,0 +1,252 @@
+#!/usr/bin/env python3
+"""Sign in to GitHub Copilot for copilot-language-server.
+
+Helix can execute Copilot's advertised finish command, but it cannot initiate
+the custom `signIn` request that creates the device-code flow. This helper does
+that one missing piece and lets the language server store its normal auth state.
+"""
+
+from __future__ import annotations
+
+import json
+import os
+import select
+import shutil
+import subprocess
+import sys
+import time
+import webbrowser
+from pathlib import Path
+from typing import Any
+
+
+SERVER = Path.home() / ".local/bin/copilot-language-server"
+PLUGIN_CONFIG = {
+    "editorPluginInfo": {"name": "helix-inline-completion", "version": "0.1.0"},
+    "github": {"copilot": {"enable": {"*": True}, "advanced": {}}},
+    "telemetry": {"telemetryLevel": "off"},
+}
+
+
+class LspClient:
+    def __init__(self, command: list[str]) -> None:
+        self.next_id = 1
+        self.proc = subprocess.Popen(
+            command,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+        )
+        if self.proc.stdin is None or self.proc.stdout is None:
+            raise RuntimeError("failed to open copilot-language-server pipes")
+
+    def close(self) -> None:
+        try:
+            shutdown_id = self.send_request("shutdown", None)
+            deadline = time.monotonic() + 2
+            while time.monotonic() < deadline:
+                message = self.read_message(0.2)
+                if message and message.get("id") == shutdown_id:
+                    break
+                if message:
+                    self.handle_server_message(message)
+            self.send_notification("exit", None)
+            self.proc.wait(timeout=2)
+        except Exception:
+            self.proc.kill()
+
+    def send(self, message: dict[str, Any]) -> None:
+        body = json.dumps(message, separators=(",", ":")).encode()
+        header = f"Content-Length: {len(body)}\r\n\r\n".encode()
+        assert self.proc.stdin is not None
+        self.proc.stdin.write(header + body)
+        self.proc.stdin.flush()
+
+    def send_request(self, method: str, params: Any) -> int:
+        request_id = self.next_id
+        self.next_id += 1
+        self.send({
+            "jsonrpc": "2.0",
+            "id": request_id,
+            "method": method,
+            "params": params,
+        })
+        return request_id
+
+    def send_notification(self, method: str, params: Any) -> None:
+        self.send({"jsonrpc": "2.0", "method": method, "params": params})
+
+    def send_response(self, request_id: int, result: Any) -> None:
+        self.send({"jsonrpc": "2.0", "id": request_id, "result": result})
+
+    def read_message(self, timeout: float) -> dict[str, Any] | None:
+        assert self.proc.stdout is not None
+        if not select.select([self.proc.stdout.fileno()], [], [], timeout)[0]:
+            return None
+
+        headers = b""
+        while b"\r\n\r\n" not in headers:
+            chunk = self.proc.stdout.read(1)
+            if not chunk:
+                return None
+            headers += chunk
+
+        length = None
+        for line in headers.split(b"\r\n"):
+            if line.lower().startswith(b"content-length:"):
+                length = int(line.split(b":", 1)[1].strip())
+                break
+        if length is None:
+            raise RuntimeError("language server message lacked Content-Length")
+
+        body = self.proc.stdout.read(length)
+        return json.loads(body)
+
+    def request(self, method: str, params: Any, timeout: float = 60) -> Any:
+        request_id = self.send_request(method, params)
+        deadline = time.monotonic() + timeout
+        while time.monotonic() < deadline:
+            message = self.read_message(0.5)
+            if message is None:
+                continue
+            if message.get("id") == request_id:
+                if "error" in message:
+                    raise RuntimeError(
+                        message["error"].get("message", message["error"])
+                    )
+                return message.get("result")
+            self.handle_server_message(message)
+        raise TimeoutError(f"timed out waiting for {method}")
+
+    def handle_server_message(self, message: dict[str, Any]) -> None:
+        method = message.get("method")
+        request_id = message.get("id")
+
+        if method == "workspace/configuration":
+            items = message.get("params", {}).get("items", [])
+            self.send_response(request_id, [PLUGIN_CONFIG for _ in items])
+        elif method == "client/registerCapability":
+            self.send_response(request_id, None)
+        elif method == "window/showDocument":
+            uri = message.get("params", {}).get("uri")
+            success = False
+            if uri:
+                print(f"Open this URL: {uri}")
+                if message.get("params", {}).get("external"):
+                    try:
+                        success = webbrowser.open(uri)
+                    except Exception:
+                        success = False
+            self.send_response(request_id, {"success": success})
+        elif request_id is not None:
+            self.send_response(request_id, None)
+
+
+def initialize(client: LspClient) -> None:
+    root = Path.cwd().resolve().as_uri()
+    init = {
+        "processId": os.getpid(),
+        "rootUri": root,
+        "capabilities": {
+            "workspace": {
+                "configuration": True,
+                "executeCommand": {"dynamicRegistration": True},
+            },
+            "window": {"showDocument": {"support": True}},
+            "textDocument": {},
+        },
+        "initializationOptions": PLUGIN_CONFIG,
+    }
+    client.request("initialize", init, timeout=30)
+    client.send_notification("initialized", {})
+
+
+def copy_to_clipboard(text: str) -> bool:
+    candidates = [
+        ["pbcopy"],
+        ["wl-copy"],
+        ["xclip", "-selection", "clipboard"],
+        ["xsel", "-ib"],
+    ]
+    for command in candidates:
+        if shutil.which(command[0]) is None:
+            continue
+        try:
+            subprocess.run(
+                command,
+                input=text.encode(),
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                check=True,
+            )
+            return True
+        except Exception:
+            continue
+    return False
+
+
+def finish_device_flow(client: LspClient, result: dict[str, Any]) -> Any:
+    timeout = max(60, int(result.get("expiresIn", 900)) + 30)
+    command = result.get("command")
+    if command:
+        return client.request(
+            "workspace/executeCommand",
+            {
+                "command": command["command"],
+                "arguments": command.get("arguments", []),
+            },
+            timeout=timeout,
+        )
+    return client.request("signInConfirm", {}, timeout=timeout)
+
+
+def main() -> int:
+    if not SERVER.exists():
+        print(f"copilot-language-server not found at {SERVER}", file=sys.stderr)
+        return 127
+
+    client = LspClient([str(SERVER), "--stdio"])
+    try:
+        initialize(client)
+        result = client.request("signIn", {}, timeout=60)
+        status = result.get("status") if isinstance(result, dict) else None
+
+        if status == "AlreadySignedIn":
+            user = result.get("user", "<unknown>")
+            print(f"GitHub Copilot already signed in as {user}.")
+            return 0
+
+        if status != "PromptUserDeviceFlow":
+            print(json.dumps(result, indent=2))
+            return 0
+
+        code = result["userCode"]
+        uri = result["verificationUri"]
+        minutes = max(1, round(int(result.get("expiresIn", 0)) / 60))
+        copied = copy_to_clipboard(code)
+        print("GitHub Copilot sign-in")
+        print(f"Open: {uri}")
+        print(f"Code: {code}" + (" (copied to clipboard)" if copied else ""))
+        print(f"Expires in about {minutes} minutes.")
+        try:
+            input("Press Enter to open GitHub and start waiting for sign-in...")
+        except EOFError:
+            print(
+                "No input available; rerun this in an interactive terminal.",
+                file=sys.stderr,
+            )
+            return 1
+
+        print(f"Waiting for {code} at {uri}...")
+        finish_result = finish_device_flow(client, result)
+        if isinstance(finish_result, dict) and "user" in finish_result:
+            print(f"GitHub Copilot authenticated as {finish_result['user']}.")
+        else:
+            print(json.dumps(finish_result, indent=2))
+        return 0
+    finally:
+        client.close()
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

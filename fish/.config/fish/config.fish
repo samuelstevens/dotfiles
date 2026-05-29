@@ -47,6 +47,10 @@ if status --is-interactive
         /opt/homebrew/bin/brew shellenv | source
     end
 
+    if command -q fzf
+        fzf --fish | source
+    end
+
     # Use vi key bindings instead of those disgusting emacs bindings
     fish_vi_key_bindings
 

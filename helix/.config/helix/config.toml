@@ -40,7 +40,7 @@ display-inlay-hints = true
 minus = "file_picker_in_current_buffer_directory"
 
 [keys.insert]
-tab = "inline_completion_accept"
+C-o = "inline_completion_accept"
 C-space = "inline_completion_trigger"
 C-e = "inline_completion_dismiss"
 C-n = "inline_completion_next"

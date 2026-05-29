@@ -3,7 +3,7 @@
 # Your todo.txt directory (this should be an absolute path)
 #export TODO_DIR="/Users/gina/Documents/todo"
 if git_root="$(git rev-parse --show-toplevel 2>/dev/null)"; then
-	export TODO_DIR="$git_root/.todo"
+	export TODO_DIR="$git_root/TODO"
 else
 	export TODO_DIR="$HOME/.todo"
 fi
