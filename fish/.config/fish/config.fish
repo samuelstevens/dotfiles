@@ -16,10 +16,6 @@ if test -d $HOME/.pyenv
     pyenv init - | source
 end
 
-if test -d /usr/local/texlive/2022/bin/universal-darwin
-    fish_add_path /usr/local/texlive/2022/bin/universal-darwin
-end
-
 # Pyenv
 set -gx PYENV_ROOT $HOME/.pyenv
 fish_add_path $PYENV_ROOT/bin
