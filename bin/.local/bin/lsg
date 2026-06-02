@@ -1,0 +1,205 @@
+#!/usr/bin/env python3
+"""List paths with their current git branch.
+
+This is intentionally closer to `ls -d` than full `ls`: with arguments it
+prints the arguments themselves, not directory contents. With no arguments it
+lists entries in the current directory.
+"""
+
+from __future__ import annotations
+
+import argparse
+import locale
+import sys
+from dataclasses import dataclass
+from pathlib import Path
+
+
+@dataclass(frozen=True)
+class Entry:
+    text: str
+    path: Path
+
+
+def parser() -> argparse.ArgumentParser:
+    p = argparse.ArgumentParser(
+        prog="lsg",
+        description="List files/directories and show git branches for repositories.",
+    )
+    p.add_argument(
+        "paths", nargs="*", help="paths to list (default: current directory entries)"
+    )
+    p.add_argument(
+        "-a", "--all", action="store_true", help="include entries starting with ."
+    )
+    p.add_argument(
+        "-A",
+        "--almost-all",
+        action="store_true",
+        help="include hidden entries, excluding . and ..",
+    )
+    p.add_argument("-r", "--reverse", action="store_true", help="reverse sort order")
+    p.add_argument(
+        "-S",
+        "--sort-size",
+        action="store_true",
+        help="sort by file size, largest first",
+    )
+    p.add_argument(
+        "-t",
+        "--sort-time",
+        action="store_true",
+        help="sort by modification time, newest first",
+    )
+    p.add_argument("-U", "--unsorted", action="store_true", help="do not sort")
+    p.add_argument(
+        "-1",
+        dest="one",
+        action="store_true",
+        help="accepted for ls compatibility; ignored",
+    )
+    p.add_argument(
+        "--no-align", action="store_true", help="do not pad names before branch output"
+    )
+    return p
+
+
+def current_dir_entries(include_hidden: bool, include_dot_dirs: bool) -> list[Entry]:
+    entries = [Entry(child.name, child) for child in Path.cwd().iterdir()]
+
+    if include_dot_dirs:
+        entries.extend([Entry(".", Path(".")), Entry("..", Path(".."))])
+
+    if not include_hidden:
+        entries = [entry for entry in entries if not entry.text.startswith(".")]
+
+    return entries
+
+
+def arg_entries(paths: list[str]) -> tuple[list[Entry], int]:
+    entries: list[Entry] = []
+    status = 0
+
+    for text in paths:
+        path = Path(text)
+        if not path.exists():
+            print(
+                f"lsg: cannot access '{text}': No such file or directory",
+                file=sys.stderr,
+            )
+            status = 2
+            continue
+        entries.append(Entry(text, path))
+
+    return entries, status
+
+
+def sort_entries(entries: list[Entry], args: argparse.Namespace) -> list[Entry]:
+    if args.unsorted:
+        return entries
+
+    if args.sort_size:
+        ordered = sorted(entries, key=lambda entry: size_of(entry.path), reverse=True)
+    elif args.sort_time:
+        ordered = sorted(entries, key=lambda entry: mtime_of(entry.path), reverse=True)
+    else:
+        ordered = sorted(entries, key=lambda entry: locale.strxfrm(entry.text))
+
+    if args.reverse:
+        ordered.reverse()
+    return ordered
+
+
+def size_of(path: Path) -> int:
+    try:
+        return path.stat().st_size
+    except OSError:
+        return -1
+
+
+def mtime_of(path: Path) -> float:
+    try:
+        return path.stat().st_mtime
+    except OSError:
+        return -1.0
+
+
+def git_branch(path: Path) -> str | None:
+    if not path.is_dir():
+        return None
+
+    head = git_head(path)
+    if head is None:
+        return None
+
+    if head.startswith("ref: "):
+        ref = strip_prefix(head, "ref: ")
+        return strip_prefix(ref, "refs/heads/")
+
+    return f"detached:{head[:12]}"
+
+
+def git_head(path: Path) -> str | None:
+    git_path = path / ".git"
+
+    if git_path.is_dir():
+        head_path = git_path / "HEAD"
+    elif git_path.is_file():
+        text = read_text(git_path).strip()
+        if not text.startswith("gitdir: "):
+            return None
+
+        git_dir = Path(strip_prefix(text, "gitdir: ").strip())
+        if not git_dir.is_absolute():
+            git_dir = path / git_dir
+        head_path = git_dir / "HEAD"
+    else:
+        return None
+
+    return read_text(head_path).strip() or None
+
+
+def strip_prefix(text: str, prefix: str) -> str:
+    if text.startswith(prefix):
+        return text[len(prefix) :]
+    return text
+
+
+def read_text(path: Path) -> str:
+    try:
+        return path.read_text(encoding="utf-8")
+    except OSError:
+        return ""
+
+
+def display(entries: list[Entry], align: bool) -> None:
+    width = max((len(entry.text) for entry in entries), default=0) if align else 0
+
+    for entry in entries:
+        branch = git_branch(entry.path)
+        if branch is None:
+            print(entry.text)
+        elif align:
+            print(f"{entry.text:<{width}}  [{branch}]")
+        else:
+            print(f"{entry.text} [{branch}]")
+
+
+def main() -> int:
+    locale.setlocale(locale.LC_COLLATE, "")
+    args = parser().parse_args()
+
+    if args.paths:
+        entries, status = arg_entries(args.paths)
+    else:
+        include_hidden = args.all or args.almost_all
+        entries = current_dir_entries(include_hidden, include_dot_dirs=args.all)
+        status = 0
+
+    entries = sort_entries(entries, args)
+    display(entries, align=not args.no_align)
+    return status
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
