@@ -1,11 +1,11 @@
 {
-  "lastChangelogVersion": "0.74.0",
+  "lastChangelogVersion": "0.79.10",
   "theme": "light",
   "enabledModels": [
     "openai-codex/gpt-5.4",
     "openai-codex/gpt-5.5"
   ],
-  "defaultThinkingLevel": "xhigh",
+  "defaultThinkingLevel": "medium",
   "defaultProvider": "openai-codex",
   "defaultModel": "gpt-5.5",
   "steeringMode": "all",
