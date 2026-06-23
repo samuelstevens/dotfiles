@@ -7,7 +7,6 @@ command = "uvx"
 args= ["ty", "server"]
 
 [language-server.ty.config]
-diagnosticMode = "off"
 inlayHints = { variableTypes = false, callArgumentNames = false }
 
 [language-server.drafty]
@@ -72,3 +71,10 @@ language-servers = ["bash-lsp", "copilot"]
 [[language]]
 name = "rust"
 language-servers = ["rust-analyzer", "copilot"]
+
+
+[[language]]
+name = "go"
+# Install golangci-lint-langserver with:
+# go install github.com/nametake/golangci-lint-langserver@latest
+language-servers = ["gopls", "golangci-lint-lsp", "copilot"]
