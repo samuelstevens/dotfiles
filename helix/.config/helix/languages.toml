@@ -31,12 +31,13 @@ editorPluginInfo = { name = "helix-inline-completion", version = "0.1.0" }
 enable = { "*" = true }
 advanced = {}
 
-[language-server.copilot.config."github-enterprise"]
-
-[language-server.copilot.config.http]
-
 [language-server.copilot.config.telemetry]
 telemetryLevel = "off"
+
+[language-server.deno-lsp]
+command = "deno"
+args = ["lsp"]
+config.deno.enable = true
 
 #############
 # Languages #
@@ -78,3 +79,19 @@ name = "go"
 # Install golangci-lint-langserver with:
 # go install github.com/nametake/golangci-lint-langserver@latest
 language-servers = ["gopls", "golangci-lint-lsp", "copilot"]
+
+
+[[language]]
+name = "typescript"
+roots = ["deno.json", "deno.jsonc", "package.json"]
+file-types = ["ts", "tsx"]
+auto-format = true
+language-servers = ["deno-lsp"]
+
+
+[[language]]
+name = "javascript"
+roots = ["deno.json", "deno.jsonc", "package.json"]
+file-types = ["js", "jsx"]
+auto-format = true
+language-servers = ["deno-lsp"]
