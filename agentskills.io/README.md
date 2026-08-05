@@ -84,10 +84,13 @@ If a skill should be shared across agents, prefer this pattern:
 uvx deno -A npm:skills add marimo-team/marimo-pair --list
 ```
 
-2. Put the canonical copy in `agentskills.io/` instead of installing it separately into each agent-managed skills directory. In practice, that usually means cloning the upstream repo into this directory:
+2. Put the canonical skill directory in `agentskills.io/` instead of installing it separately into each agent-managed skills directory. Some repositories contain multiple skills, so copy the desired subdirectory rather than assuming the repository root is a skill.
 
 ```sh
-git clone https://github.com/marimo-team/marimo-pair.git agentskills.io/marimo-pair
+update_dir=$(mktemp -d "$HOME/.local/tmp/marimo-pair-install.XXXXXX")
+git clone --depth 1 https://github.com/marimo-team/marimo-pair.git "$update_dir/repo"
+cp -a "$update_dir/repo/skills/marimo-pair" agentskills.io/
+cp -a "$update_dir/repo/skills/retro-marimo-pair" agentskills.io/
 ```
 
 3. Symlink that shared directory into each agent that should see it:
@@ -96,6 +99,9 @@ git clone https://github.com/marimo-team/marimo-pair.git agentskills.io/marimo-p
 ln -s ../../../agentskills.io/marimo-pair codex/.codex/skills/marimo-pair
 ln -s ../../../agentskills.io/marimo-pair claude/.claude/skills/marimo-pair
 ln -s ../../../../agentskills.io/marimo-pair pi/.pi/agent/skills/marimo-pair
+ln -s ../../../agentskills.io/retro-marimo-pair codex/.codex/skills/retro-marimo-pair
+ln -s ../../../agentskills.io/retro-marimo-pair claude/.claude/skills/retro-marimo-pair
+ln -s ../../../../agentskills.io/retro-marimo-pair pi/.pi/agent/skills/retro-marimo-pair
 ```
 
 4. Restow the affected packages:
@@ -105,6 +111,48 @@ uv run stow-all.py codex claude pi
 ```
 
 5. Restart the agents so they rediscover the new skill.
+
+## Update marimo-pair
+
+The canonical copies are not Git checkouts, so update them from the latest tagged release. First make sure there are no intentional local changes that would be overwritten:
+
+```sh
+git status --short -- \
+  agentskills.io/marimo-pair \
+  agentskills.io/retro-marimo-pair
+```
+
+Then download the latest release and synchronize both skills:
+
+```sh
+update_dir=$(mktemp -d "$HOME/.local/tmp/marimo-pair-update.XXXXXX")
+marimo_pair_ref=$(gh release view \
+  --repo marimo-team/marimo-pair \
+  --json tagName \
+  --jq .tagName)
+
+git clone --depth 1 --branch "$marimo_pair_ref" \
+  https://github.com/marimo-team/marimo-pair.git \
+  "$update_dir/repo"
+
+rsync -a --delete \
+  "$update_dir/repo/skills/marimo-pair/" \
+  agentskills.io/marimo-pair/
+rsync -a --delete \
+  "$update_dir/repo/skills/retro-marimo-pair/" \
+  agentskills.io/retro-marimo-pair/
+```
+
+Review the update and validate the bundled shell scripts:
+
+```sh
+git diff -- \
+  agentskills.io/marimo-pair \
+  agentskills.io/retro-marimo-pair
+bash -n agentskills.io/marimo-pair/scripts/*.sh
+```
+
+The existing Claude, Codex, and Pi symlinks do not need to be recreated. Restart running agents so they reload the updated instructions.
 
 ### Why not `skills add` per agent?
 

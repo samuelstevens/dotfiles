@@ -1,0 +1,17 @@
+theme = "github-light-default"
+
+# Update when on-disk source changes
+watch = true
+
+# Show agent comments/notes
+agent_notes = true
+
+# Wrap long lines
+wrap_lines = true
+
+# Use the terminal background color, not the theme background
+transparent_background = true
+
+# Pager input comes from stdin, so there is no on-disk source to reload.
+[pager]
+watch = false
