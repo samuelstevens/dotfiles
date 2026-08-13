@@ -1,105 +1,68 @@
 /**
- * Questions Extension
+ * Questionnaire Tool - Unified tool for asking single or multiple questions
  *
- * Provides two workflows for structured user input:
- *
- * 1) Tool: `questions`
- *    The LLM can ask one or more multiple-choice questions in a single tool call.
- *    Each question can optionally allow a free-form "Other" answer.
- *
- * 2) Command: `/answer` (and shortcut `Ctrl+.`)
- *    Extracts questions from the last assistant message, shows an interactive Q&A UI,
- *    then submits your answers back to the agent.
- *
- * Install:
- *   - Save this file to: ~/.pi/agent/extensions/questions.ts
- *   - In pi: /reload
+ * Single question: simple options list
+ * Multiple questions: tab bar navigation between questions
  */
 
 import { spawnSync } from "node:child_process";
-import * as fs from "node:fs";
-import * as os from "node:os";
-import * as path from "node:path";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 
-import type { ExtensionAPI, ExtensionContext } from "@mariozechner/pi-coding-agent";
-import { BorderedLoader } from "@mariozechner/pi-coding-agent";
-import { complete, type Api, type Model, type UserMessage } from "@mariozechner/pi-ai";
+import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import {
 	Editor,
 	type EditorTheme,
-	getEditorKeybindings,
 	Key,
 	matchesKey,
 	Text,
-	truncateToWidth,
-	type Component,
 	type TUI,
 	visibleWidth,
 	wrapTextWithAnsi,
-} from "@mariozechner/pi-tui";
-import { Type } from "@sinclair/typebox";
+} from "@earendil-works/pi-tui";
+import { Type } from "typebox";
 
-function openExternalEditor(tui: TUI, currentText: string, cwd?: string): string | undefined {
-	const editorCmd = process.env.VISUAL || process.env.EDITOR;
-	if (!editorCmd) return undefined;
+function editExternally(tui: TUI, text: string, cwd: string): string | undefined {
+	const editor = process.env.VISUAL || process.env.EDITOR;
+	if (!editor) return undefined;
 
-	const tmpFile = path.join(os.tmpdir(), `pi-external-editor-${Date.now()}.md`);
-	let stopped = false;
+	const directory = mkdtempSync(join(tmpdir(), "pi-questionnaire-"));
+	const file = join(directory, "answer.md");
+	writeFileSync(file, text, "utf8");
 
+	tui.stop();
 	try {
-		fs.writeFileSync(tmpFile, currentText, "utf-8");
-
-		tui.stop();
-		stopped = true;
-
-		const [editor, ...editorArgs] = editorCmd.split(" ");
-		const result = spawnSync(editor, [...editorArgs, tmpFile], {
-			stdio: "inherit",
+		const result = spawnSync("/bin/sh", ["-c", `exec ${editor} "$1"`, "editor", file], {
 			cwd,
-			env: process.env,
+			stdio: "inherit",
 		});
-
-		if (result.status === 0) {
-			return fs.readFileSync(tmpFile, "utf-8").replace(/\n$/, "");
-		}
+		return result.status === 0 ? readFileSync(file, "utf8").replace(/\n$/, "") : undefined;
 	} finally {
-		try {
-			fs.unlinkSync(tmpFile);
-		} catch {
-			// Ignore cleanup errors
-		}
-		if (stopped) {
-			tui.start();
-			// Force full re-render since external editor likely used alternate screen
-			tui.requestRender(true);
-		}
+		rmSync(directory, { recursive: true, force: true });
+		tui.start();
+		tui.requestRender(true);
 	}
-
-	return undefined;
 }
 
-// -----------------------------
-// Tool: questions
-// -----------------------------
-
-interface QuestionsOption {
+// Types
+interface QuestionOption {
+	value: string;
 	label: string;
-	value?: string;
 	description?: string;
 }
 
-type RenderOption = QuestionsOption & { isOther?: boolean };
+type RenderOption = QuestionOption & { isOther?: boolean };
 
-interface QuestionsToolQuestion {
+interface Question {
 	id: string;
 	label: string;
-	question: string;
-	options: Array<Required<Pick<QuestionsOption, "label" | "value">> & Pick<QuestionsOption, "description">>;
+	prompt: string;
+	options: QuestionOption[];
 	allowOther: boolean;
-	otherLabel: string;
 }
 
-interface QuestionsToolAnswer {
+interface Answer {
 	id: string;
 	value: string;
 	label: string;
@@ -107,451 +70,81 @@ interface QuestionsToolAnswer {
 	index?: number;
 }
 
-interface QuestionsToolDetails {
-	questions: QuestionsToolQuestion[];
-	answers: QuestionsToolAnswer[];
+interface QuestionnaireResult {
+	questions: Question[];
+	answers: Answer[];
 	cancelled: boolean;
 }
 
-const QuestionsOptionSchema = Type.Object({
+// Schema
+const QuestionOptionSchema = Type.Object({
+	value: Type.String({ description: "The value returned when selected" }),
 	label: Type.String({ description: "Display label for the option" }),
-	value: Type.Optional(Type.String({ description: "Value returned when selected (defaults to label)" })),
 	description: Type.Optional(Type.String({ description: "Optional description shown below label" })),
 });
 
-const QuestionsQuestionSchema = Type.Object({
-	id: Type.Optional(Type.String({ description: "Unique identifier for this question (defaults to q1, q2, ...)" })),
-	label: Type.Optional(Type.String({ description: "Short label for UI (defaults to Q1, Q2, ...)" })),
-	question: Type.String({ description: "The question to ask the user" }),
-	options: Type.Array(QuestionsOptionSchema, { description: "Options for the user to choose from" }),
-	allowOther: Type.Optional(Type.Boolean({ description: "Allow free-form entry (default: true)" })),
-	otherLabel: Type.Optional(
-		Type.String({ description: "Label for the free-form entry option (default: 'Type something.')" }),
+const QuestionSchema = Type.Object({
+	id: Type.String({ description: "Unique identifier for this question" }),
+	label: Type.Optional(
+		Type.String({
+			description: "Short contextual label for tab bar, e.g. 'Scope', 'Priority' (defaults to Q1, Q2)",
+		}),
 	),
+	prompt: Type.String({ description: "The full question text to display" }),
+	options: Type.Array(QuestionOptionSchema, { description: "Available options to choose from" }),
+	allowOther: Type.Optional(Type.Boolean({ description: "Allow 'Type something' option (default: true)" })),
 });
 
-const QuestionsParams = Type.Object({
-	questions: Type.Array(QuestionsQuestionSchema, {
-		description: "Questions to ask the user",
-	}),
+const QuestionnaireParams = Type.Object({
+	questions: Type.Array(QuestionSchema, { description: "Questions to ask the user" }),
 });
 
-function normalizeOtherLabel(label: string | undefined): string {
-	const v = (label || "Type something.").trim();
-	return v.length > 0 ? v : "Type something.";
-}
-
-function normalizeQuestions(params: any): QuestionsToolQuestion[] {
-	const questionsInput = Array.isArray(params.questions) ? params.questions : [];
-
-	return questionsInput.map((q: any, i: number) => {
-		const id = (q.id || `q${i + 1}`).toString();
-		const label = (q.label || `Q${i + 1}`).toString();
-		const question = (q.question || "").toString();
-
-		const optionsInput = Array.isArray(q.options) ? q.options : [];
-		const options = optionsInput.map((o: any) => ({
-			label: (o?.label ?? "").toString(),
-			value: ((o?.value ?? o?.label) ?? "").toString(),
-			description: o?.description ? o.description.toString() : undefined,
-		}));
-
-		return {
-			id,
-			label,
-			question,
-			options,
-			allowOther: q.allowOther !== false,
-			otherLabel: normalizeOtherLabel(q.otherLabel),
-		} as QuestionsToolQuestion;
-	});
-}
-
-function errorQuestionsResult(message: string, details?: Partial<QuestionsToolDetails>) {
+function errorResult(
+	message: string,
+	questions: Question[] = [],
+): { content: { type: "text"; text: string }[]; details: QuestionnaireResult } {
 	return {
-		content: [{ type: "text" as const, text: message }],
-		details: {
-			questions: details?.questions ?? [],
-			answers: details?.answers ?? [],
-			cancelled: true,
-		} as QuestionsToolDetails,
+		content: [{ type: "text", text: message }],
+		details: { questions, answers: [], cancelled: true },
 	};
 }
 
-// -----------------------------
-// Command: /answer
-// -----------------------------
-
-interface ExtractedQuestion {
-	question: string;
-	context?: string;
-}
-
-interface ExtractionResult {
-	questions: ExtractedQuestion[];
-}
-
-const EXTRACTION_SYSTEM_PROMPT = `You are a question extractor. Given text from a conversation, extract any questions that need answering.
-
-Output a JSON object with this structure:
-{
-  "questions": [
-    {
-      "question": "The question text",
-      "context": "Optional context that helps answer the question"
-    }
-  ]
-}
-
-Rules:
-- Extract all questions that require user input
-- Keep questions in the order they appeared
-- Be concise with question text
-- Include context only when it provides essential information for answering
-- If no questions are found, return {"questions": []}
-`;
-
-// Prefer a small/cheap model for extraction when available.
-const EXTRACTION_MODEL_CANDIDATES: Array<{ provider: string; id: string }> = [
-	{ provider: "openai-codex", id: "gpt-5.1-codex-mini" },
-	{ provider: "anthropic", id: "claude-haiku-4-5" },
-];
-
-async function selectExtractionModel(ctx: ExtensionContext): Promise<Model<Api>> {
-	if (!ctx.model) throw new Error("No model selected");
-
-	for (const candidate of EXTRACTION_MODEL_CANDIDATES) {
-		const model = ctx.modelRegistry.find(candidate.provider, candidate.id);
-		if (!model) continue;
-		const apiKey = await ctx.modelRegistry.getApiKey(model);
-		if (apiKey) return model;
-	}
-
-	return ctx.model;
-}
-
-function parseExtractionResult(text: string): ExtractionResult | null {
-	try {
-		let jsonStr = text;
-		const jsonMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/);
-		if (jsonMatch) jsonStr = jsonMatch[1].trim();
-
-		const parsed = JSON.parse(jsonStr);
-		if (parsed && Array.isArray(parsed.questions)) {
-			return parsed as ExtractionResult;
-		}
-		return null;
-	} catch {
-		return null;
-	}
-}
-
-function findLastAssistantText(ctx: ExtensionContext): string | null {
-	const branch = ctx.sessionManager.getBranch();
-
-	for (let i = branch.length - 1; i >= 0; i--) {
-		const entry = branch[i];
-		if (entry.type !== "message") continue;
-
-		const msg = entry.message as any;
-		if (msg.role !== "assistant") continue;
-		if (msg.stopReason !== "stop") return null;
-
-		const textParts = (msg.content ?? [])
-			.filter((c: any): c is { type: "text"; text: string } => c?.type === "text")
-			.map((c: any) => c.text);
-
-		if (textParts.length > 0) return textParts.join("\n");
-	}
-
-	return null;
-}
-
-class QnAComponent implements Component {
-	private questions: ExtractedQuestion[];
-	private answers: string[];
-	private currentIndex = 0;
-	private editor: Editor;
-	private tui: TUI;
-	private theme: any;
-	private keybindings: any;
-	private cwd: string;
-	private done: (result: string | null) => void;
-	private confirmSubmit = false;
-
-	private cachedWidth?: number;
-	private cachedLines?: string[];
-
-	constructor(
-		questions: ExtractedQuestion[],
-		tui: TUI,
-		theme: any,
-		keybindings: any,
-		cwd: string,
-		done: (result: string | null) => void,
-	) {
-		this.questions = questions;
-		this.answers = questions.map(() => "");
-		this.tui = tui;
-		this.theme = theme;
-		this.keybindings = keybindings;
-		this.cwd = cwd;
-		this.done = done;
-
-		const editorTheme: EditorTheme = {
-			borderColor: (s) => theme.fg("accent", s),
-			selectList: {
-				selectedPrefix: (t: string) => theme.fg("accent", t),
-				selectedText: (t: string) => theme.fg("accent", t),
-				description: (t: string) => theme.fg("muted", t),
-				scrollInfo: (t: string) => theme.fg("dim", t),
-				noMatch: (t: string) => theme.fg("warning", t),
-			},
-		};
-		this.editor = new Editor(tui, editorTheme);
-		this.editor.disableSubmit = true;
-		this.editor.onChange = () => {
-			this.invalidate();
-			this.tui.requestRender();
-		};
-	}
-
-	invalidate(): void {
-		this.cachedWidth = undefined;
-		this.cachedLines = undefined;
-	}
-
-	private saveCurrentAnswer(): void {
-		this.answers[this.currentIndex] = this.editor.getText();
-	}
-
-	private navigateTo(index: number): void {
-		if (index < 0 || index >= this.questions.length) return;
-		this.saveCurrentAnswer();
-		this.currentIndex = index;
-		this.editor.setText(this.answers[index] || "");
-		this.confirmSubmit = false;
-		this.invalidate();
-	}
-
-	private submit(): void {
-		this.saveCurrentAnswer();
-
-		const parts: string[] = [];
-		for (let i = 0; i < this.questions.length; i++) {
-			const q = this.questions[i];
-			const a = (this.answers[i] ?? "").trim() || "(no answer)";
-			parts.push(`Q: ${q.question}`);
-			if (q.context) parts.push(`> ${q.context}`);
-			parts.push(`A: ${a}`);
-			parts.push("");
-		}
-
-		this.done(parts.join("\n").trim());
-	}
-
-	private cancel(): void {
-		this.done(null);
-	}
-
-	handleInput(data: string): void {
-		const editorKb = getEditorKeybindings();
-
-		// Submit confirmation.
-		if (this.confirmSubmit) {
-			if (editorKb.matches(data, "submit") || data.toLowerCase() === "y") {
-				this.submit();
-				return;
-			}
-			if (editorKb.matches(data, "selectCancel") || data.toLowerCase() === "n") {
-				this.confirmSubmit = false;
-				this.invalidate();
-				this.tui.requestRender();
-				return;
-			}
-			return;
-		}
-
-		// Global cancel.
-		if (editorKb.matches(data, "selectCancel")) {
-			this.cancel();
-			return;
-		}
-
-		// External editor (Ctrl+G by default).
-		if (this.keybindings?.matches?.(data, "externalEditor")) {
-			const updated = openExternalEditor(this.tui, this.editor.getText(), this.cwd);
-			if (updated !== undefined) {
-				this.editor.setText(updated);
-				this.invalidate();
-			}
-			this.tui.requestRender();
-			return;
-		}
-
-		// Newline (Ctrl+J, Shift+Enter, etc.) should never navigate.
-		if (data === "\n" || matchesKey(data, Key.ctrl("j")) || editorKb.matches(data, "newLine")) {
-			this.editor.handleInput(data === "\n" ? "\n" : data);
-			this.invalidate();
-			this.tui.requestRender();
-			return;
-		}
-
-		// Navigation.
-		if (matchesKey(data, Key.tab) || matchesKey(data, Key.right)) {
-			if (this.currentIndex < this.questions.length - 1) {
-				this.navigateTo(this.currentIndex + 1);
-				this.tui.requestRender();
-			}
-			return;
-		}
-
-		if (matchesKey(data, Key.shift("tab")) || matchesKey(data, Key.left)) {
-			if (this.currentIndex > 0) {
-				this.navigateTo(this.currentIndex - 1);
-				this.tui.requestRender();
-			}
-			return;
-		}
-
-		// Submit (Enter) moves forward; on last question it asks for confirmation.
-		if (editorKb.matches(data, "submit")) {
-			this.saveCurrentAnswer();
-			if (this.currentIndex < this.questions.length - 1) {
-				this.navigateTo(this.currentIndex + 1);
-			} else {
-				this.confirmSubmit = true;
-				this.invalidate();
-			}
-			this.tui.requestRender();
-			return;
-		}
-
-		// Everything else goes to the editor.
-		this.editor.handleInput(data);
-		this.invalidate();
-		this.tui.requestRender();
-	}
-
-	render(width: number): string[] {
-		if (this.cachedLines && this.cachedWidth === width) return this.cachedLines;
-
-		const theme = this.theme;
-		const addLine = (lines: string[], s: string) => lines.push(truncateToWidth(s, width));
-
-		const lines: string[] = [];
-		const q = this.questions[this.currentIndex];
-
-		addLine(lines, theme.fg("accent", "─".repeat(width)));
-		addLine(
-			lines,
-			theme.fg("accent", theme.bold(` Answer questions (${this.currentIndex + 1}/${this.questions.length})`)),
-		);
-		lines.push("");
-
-		// Progress indicator.
-		const dots: string[] = [];
-		for (let i = 0; i < this.questions.length; i++) {
-			const answered = (this.answers[i] ?? "").trim().length > 0;
-			if (i === this.currentIndex) dots.push(theme.fg("accent", "●"));
-			else if (answered) dots.push(theme.fg("success", "●"));
-			else dots.push(theme.fg("dim", "○"));
-		}
-		addLine(lines, " " + dots.join(" "));
-		lines.push("");
-
-		// Question (wrapped).
-		for (const l of wrapTextWithAnsi(theme.fg("accent", "Q: ") + theme.fg("text", q.question), width - 1)) {
-			addLine(lines, " " + l);
-		}
-
-		// Optional context.
-		if (q.context) {
-			lines.push("");
-			for (const l of wrapTextWithAnsi(theme.fg("muted", "> " + q.context), width - 1)) {
-				addLine(lines, " " + l);
-			}
-		}
-
-		lines.push("");
-		addLine(lines, theme.fg("muted", " Answer:"));
-		for (const l of this.editor.render(Math.max(10, width - 2))) {
-			addLine(lines, " " + l);
-		}
-		lines.push("");
-
-		if (this.confirmSubmit) {
-			addLine(
-				lines,
-				theme.fg("warning", " Submit all answers?") +
-					" " +
-					theme.fg("dim", "(Enter/y to submit • Esc/n to keep editing)"),
-			);
-		} else {
-			const extHint = process.env.VISUAL || process.env.EDITOR ? " • Ctrl+G external editor" : "";
-			addLine(
-				lines,
-				theme.fg(
-					"dim",
-					` Tab/→ next • Shift+Tab/← prev • Enter next/confirm • Ctrl+J newline${extHint} • Esc cancel`,
-				),
-			);
-		}
-
-		addLine(lines, theme.fg("accent", "─".repeat(width)));
-
-		this.cachedWidth = width;
-		this.cachedLines = lines;
-		return lines;
-	}
-}
-
-// -----------------------------
-// Extension entrypoint
-// -----------------------------
-
-export default function (pi: ExtensionAPI) {
-	// LLM-callable multi-question tool.
+export default function questionnaire(pi: ExtensionAPI) {
 	pi.registerTool({
-		name: "questions",
-		label: "Questions",
+		name: "questionnaire",
+		label: "Questionnaire",
 		description:
-			"Ask the user one or more multiple-choice questions in a single tool call (optionally with a free-form 'Other' entry per question).",
-		parameters: QuestionsParams,
+			"Ask the user one or more questions. Use for clarifying requirements, getting preferences, or confirming decisions. For single questions, shows a simple option list. For multiple questions, shows a tab-based interface.",
+		parameters: QuestionnaireParams,
 
 		async execute(_toolCallId, params, _signal, _onUpdate, ctx) {
-			if (!ctx.hasUI) {
-				return errorQuestionsResult("Error: UI not available (running in non-interactive mode)");
+			if (ctx.mode !== "tui") {
+				return errorResult("Error: UI not available (running in non-interactive mode)");
+			}
+			if (params.questions.length === 0) {
+				return errorResult("Error: No questions provided");
 			}
 
-			const questions = normalizeQuestions(params);
-			if (questions.length === 0) {
-				return errorQuestionsResult("Error: No questions provided");
-			}
-
-			for (const q of questions) {
-				if (!q.question.trim()) {
-					return errorQuestionsResult("Error: A question is missing its 'question' text", { questions });
-				}
-				if (q.options.length === 0) {
-					return errorQuestionsResult(`Error: Question '${q.id}' has no options`, { questions });
-				}
-			}
+			// Normalize questions with defaults
+			const questions: Question[] = params.questions.map((q, i) => ({
+				...q,
+				label: q.label || `Q${i + 1}`,
+				allowOther: q.allowOther !== false,
+			}));
 
 			const isMulti = questions.length > 1;
 			const totalTabs = questions.length + 1; // questions + Submit
-			const cwd = ctx.cwd;
 
-			const result = await ctx.ui.custom<QuestionsToolDetails>((tui, theme, kb, done) => {
+			const result = await ctx.ui.custom<QuestionnaireResult>((tui, theme, keybindings, done) => {
 				// State
 				let currentTab = 0;
 				let optionIndex = 0;
 				let inputMode = false;
 				let inputQuestionId: string | null = null;
 				let cachedLines: string[] | undefined;
-				const answers = new Map<string, QuestionsToolAnswer>();
+				const answers = new Map<string, Answer>();
 
-				// Editor for "Other"
+				// Editor for "Type something" option
 				const editorTheme: EditorTheme = {
 					borderColor: (s) => theme.fg("accent", s),
 					selectList: {
@@ -564,20 +157,17 @@ export default function (pi: ExtensionAPI) {
 				};
 				const editor = new Editor(tui, editorTheme);
 
+				// Helpers
 				function refresh() {
 					cachedLines = undefined;
 					tui.requestRender();
 				}
 
 				function submit(cancelled: boolean) {
-					done({
-						questions,
-						answers: Array.from(answers.values()),
-						cancelled,
-					});
+					done({ questions, answers: Array.from(answers.values()), cancelled });
 				}
 
-				function currentQuestion(): QuestionsToolQuestion | undefined {
+				function currentQuestion(): Question | undefined {
 					return questions[currentTab];
 				}
 
@@ -586,7 +176,7 @@ export default function (pi: ExtensionAPI) {
 					if (!q) return [];
 					const opts: RenderOption[] = [...q.options];
 					if (q.allowOther) {
-						opts.push({ value: "__other__", label: q.otherLabel, isOther: true });
+						opts.push({ value: "__other__", label: "Type something.", isOther: true });
 					}
 					return opts;
 				}
@@ -634,24 +224,15 @@ export default function (pi: ExtensionAPI) {
 							refresh();
 							return;
 						}
-
-						// External editor (Ctrl+G by default)
-						if (kb?.matches?.(data, "externalEditor")) {
-							const updated = openExternalEditor(tui, editor.getText(), cwd);
-							if (updated !== undefined) {
-								editor.setText(updated);
-							}
+						if (
+							matchesKey(data, Key.ctrl("g")) ||
+							keybindings.matches(data, "app.editor.external")
+						) {
+							const updated = editExternally(tui, editor.getText(), ctx.cwd);
+							if (updated !== undefined) editor.setText(updated);
 							refresh();
 							return;
 						}
-
-						// Ctrl+J newline (some terminals send a dedicated ctrl+j key id)
-						if (matchesKey(data, Key.ctrl("j"))) {
-							editor.handleInput("\n");
-							refresh();
-							return;
-						}
-
 						editor.handleInput(data);
 						refresh();
 						return;
@@ -687,13 +268,23 @@ export default function (pi: ExtensionAPI) {
 					}
 
 					// Option navigation
-					if (matchesKey(data, Key.up)) {
-						optionIndex = Math.max(0, optionIndex - 1);
+					if (
+						matchesKey(data, Key.up) ||
+						matchesKey(data, Key.ctrl("p")) ||
+						matchesKey(data, Key.ctrl("k")) ||
+						data === "k"
+					) {
+						optionIndex = (optionIndex - 1 + opts.length) % opts.length;
 						refresh();
 						return;
 					}
-					if (matchesKey(data, Key.down)) {
-						optionIndex = Math.min(opts.length - 1, optionIndex + 1);
+					if (
+						matchesKey(data, Key.down) ||
+						matchesKey(data, Key.ctrl("n")) ||
+						matchesKey(data, Key.ctrl("j")) ||
+						data === "j"
+					) {
+						optionIndex = (optionIndex + 1) % opts.length;
 						refresh();
 						return;
 					}
@@ -708,7 +299,7 @@ export default function (pi: ExtensionAPI) {
 							refresh();
 							return;
 						}
-						saveAnswer(q.id, opt.value ?? opt.label, opt.label, false, optionIndex + 1);
+						saveAnswer(q.id, opt.value, opt.label, false, optionIndex + 1);
 						advanceAfterAnswer();
 						return;
 					}
@@ -723,42 +314,40 @@ export default function (pi: ExtensionAPI) {
 					if (cachedLines) return cachedLines;
 
 					const lines: string[] = [];
+					const renderWidth = Math.max(1, width);
 					const q = currentQuestion();
 					const opts = currentOptions();
 
-					const addLine = (s: string) => lines.push(truncateToWidth(s, width));
+					function addWrapped(text: string) {
+						lines.push(...wrapTextWithAnsi(text, renderWidth));
+					}
 
-					const addWrapped = (prefix: string, body: string) => {
+					function addWrappedWithPrefix(prefix: string, text: string) {
 						const prefixWidth = visibleWidth(prefix);
-						const innerWidth = Math.max(1, width - prefixWidth);
-						const wrapped = wrapTextWithAnsi(body, innerWidth);
-
-						if (wrapped.length === 0) {
-							addLine(prefix);
+						if (prefixWidth >= renderWidth) {
+							addWrapped(prefix + text);
 							return;
 						}
-
-						addLine(prefix + wrapped[0]);
-						const indent = " ".repeat(prefixWidth);
-						for (let i = 1; i < wrapped.length; i++) {
-							addLine(indent + wrapped[i]);
+						const wrapped = wrapTextWithAnsi(text, renderWidth - prefixWidth);
+						const continuationPrefix = " ".repeat(prefixWidth);
+						for (let i = 0; i < wrapped.length; i++) {
+							lines.push(`${i === 0 ? prefix : continuationPrefix}${wrapped[i]}`);
 						}
-					};
+					}
 
-					addLine(theme.fg("accent", "─".repeat(width)));
+					lines.push(theme.fg("accent", "─".repeat(renderWidth)));
 
-					// Tab bar
+					// Tab bar (multi-question only)
 					if (isMulti) {
 						const tabs: string[] = ["← "];
 						for (let i = 0; i < questions.length; i++) {
 							const isActive = i === currentTab;
 							const isAnswered = answers.has(questions[i].id);
+							const lbl = questions[i].label;
 							const box = isAnswered ? "■" : "□";
 							const color = isAnswered ? "success" : "muted";
-							const text = ` ${box} ${questions[i].label} `;
-							const styled = isActive
-								? theme.bg("selectedBg", theme.fg("text", text))
-								: theme.fg(color, text);
+							const text = ` ${box} ${lbl} `;
+							const styled = isActive ? theme.bg("selectedBg", theme.fg("text", text)) : theme.fg(color, text);
 							tabs.push(`${styled} `);
 						}
 						const canSubmit = allAnswered();
@@ -768,68 +357,64 @@ export default function (pi: ExtensionAPI) {
 							? theme.bg("selectedBg", theme.fg("text", submitText))
 							: theme.fg(canSubmit ? "success" : "dim", submitText);
 						tabs.push(`${submitStyled} →`);
-						addLine(` ${tabs.join("")}`);
+						addWrappedWithPrefix(" ", tabs.join(""));
 						lines.push("");
 					}
 
+					// Helper to render options list
 					function renderOptions() {
 						for (let i = 0; i < opts.length; i++) {
 							const opt = opts[i];
 							const selected = i === optionIndex;
 							const isOther = opt.isOther === true;
+							const prefix = selected ? theme.fg("accent", "> ") : "  ";
+							const label = `${i + 1}. ${opt.label}${isOther && inputMode ? " ✎" : ""}`;
+							const color = selected || (isOther && inputMode) ? "accent" : "text";
 
-							const arrow = selected ? theme.fg("accent", "> ") : "  ";
-							const lineColor = isOther && inputMode ? "accent" : selected ? "accent" : "text";
-							const suffix = isOther && inputMode ? " ✎" : "";
-
-							const prefix = arrow + theme.fg(lineColor, `${i + 1}. `);
-							const label = theme.fg(lineColor, `${opt.label}${suffix}`);
-							addWrapped(prefix, label);
-
+							addWrappedWithPrefix(prefix, theme.fg(color, label));
 							if (opt.description) {
-								addWrapped("     ", theme.fg("muted", opt.description));
+								addWrappedWithPrefix("     ", theme.fg("muted", opt.description));
 							}
 						}
 					}
 
 					// Content
 					if (inputMode && q) {
-						addWrapped(" ", theme.fg("text", q.question));
+						addWrappedWithPrefix(" ", theme.fg("text", q.prompt));
 						lines.push("");
+						// Show options for reference
 						renderOptions();
 						lines.push("");
-						addLine(theme.fg("muted", " Your answer:"));
-						for (const line of editor.render(width - 2)) {
-							addLine(` ${line}`);
+						addWrappedWithPrefix(" ", theme.fg("muted", "Your answer:"));
+						for (const line of editor.render(Math.max(1, renderWidth - 2))) {
+							lines.push(` ${line}`);
 						}
 						lines.push("");
-						const extHint = process.env.VISUAL || process.env.EDITOR ? " • Ctrl+G external editor" : "";
-						addLine(theme.fg("dim", ` Enter to submit • Ctrl+J newline${extHint} • Esc to go back`));
+						const editorHint = process.env.VISUAL || process.env.EDITOR ? " • Ctrl+G external editor" : "";
+						addWrappedWithPrefix(" ", theme.fg("dim", `Enter to submit${editorHint} • Esc to cancel`));
 					} else if (currentTab === questions.length) {
-						addLine(theme.fg("accent", theme.bold(" Ready to submit")));
+						addWrappedWithPrefix(" ", theme.fg("accent", theme.bold("Ready to submit")));
 						lines.push("");
 						for (const question of questions) {
 							const answer = answers.get(question.id);
 							if (answer) {
-								const left = theme.fg("muted", ` ${question.label}: `);
-								const right = answer.wasCustom
-									? theme.fg("muted", "(wrote) ") + theme.fg("text", answer.label)
-									: theme.fg("text", answer.label);
-								addWrapped(left, right);
+								const prefix = answer.wasCustom ? "(wrote) " : "";
+								const summary = `${theme.fg("muted", `${question.label}: `)}${theme.fg("text", prefix + answer.label)}`;
+								addWrappedWithPrefix(" ", summary);
 							}
 						}
 						lines.push("");
 						if (allAnswered()) {
-							addLine(theme.fg("success", " Press Enter to submit"));
+							addWrappedWithPrefix(" ", theme.fg("success", "Press Enter to submit"));
 						} else {
 							const missing = questions
 								.filter((q) => !answers.has(q.id))
 								.map((q) => q.label)
 								.join(", ");
-							addWrapped(" ", theme.fg("warning", `Unanswered: ${missing}`));
+							addWrappedWithPrefix(" ", theme.fg("warning", `Unanswered: ${missing}`));
 						}
 					} else if (q) {
-						addWrapped(" ", theme.fg("text", q.question));
+						addWrappedWithPrefix(" ", theme.fg("text", q.prompt));
 						lines.push("");
 						renderOptions();
 					}
@@ -837,11 +422,11 @@ export default function (pi: ExtensionAPI) {
 					lines.push("");
 					if (!inputMode) {
 						const help = isMulti
-							? " Tab/←→ navigate • ↑↓ select • Enter confirm • Esc cancel"
-							: " ↑↓ navigate • Enter select • Esc cancel";
-						addLine(theme.fg("dim", help));
+							? "Tab/←→ questions • ↑↓ select • Enter confirm • Esc cancel"
+							: "↑↓ select • Enter confirm • Esc cancel";
+						addWrappedWithPrefix(" ", theme.fg("dim", help));
 					}
-					addLine(theme.fg("accent", "─".repeat(width)));
+					lines.push(theme.fg("accent", "─".repeat(renderWidth)));
 
 					cachedLines = lines;
 					return lines;
@@ -858,15 +443,16 @@ export default function (pi: ExtensionAPI) {
 
 			if (result.cancelled) {
 				return {
-					content: [{ type: "text", text: "User cancelled the questions" }],
+					content: [{ type: "text", text: "User cancelled the questionnaire" }],
 					details: result,
 				};
 			}
 
 			const answerLines = result.answers.map((a) => {
-				const q = questions.find((qq) => qq.id === a.id);
-				const qLabel = q?.label || a.id;
-				if (a.wasCustom) return `${qLabel}: user wrote: ${a.label}`;
+				const qLabel = questions.find((q) => q.id === a.id)?.label || a.id;
+				if (a.wasCustom) {
+					return `${qLabel}: user wrote: ${a.label}`;
+				}
 				return `${qLabel}: user selected: ${a.index}. ${a.label}`;
 			});
 
@@ -876,19 +462,20 @@ export default function (pi: ExtensionAPI) {
 			};
 		},
 
-		renderCall(args, theme) {
-			const qs = Array.isArray((args as any).questions) ? (args as any).questions : [];
+		renderCall(args, theme, _context) {
+			const qs = (args.questions as Question[]) || [];
 			const count = qs.length;
-			const first = count > 0 && qs[0]?.question ? String(qs[0].question) : "";
-			let text = theme.fg("toolTitle", theme.bold("questions ")) + theme.fg("muted", `${count} question${count === 1 ? "" : "s"}`);
-			if (first) {
-				text += "\n" + theme.fg("dim", truncateToWidth(`  First: ${first}`, 60));
+			const labels = qs.map((q) => q.label || q.id).join(", ");
+			let text = theme.fg("toolTitle", theme.bold("questionnaire "));
+			text += theme.fg("muted", `${count} question${count !== 1 ? "s" : ""}`);
+			if (labels) {
+				text += theme.fg("dim", ` (${labels})`);
 			}
 			return new Text(text, 0, 0);
 		},
 
-		renderResult(result, _options, theme) {
-			const details = result.details as QuestionsToolDetails | undefined;
+		renderResult(result, _options, theme, _context) {
+			const details = result.details as QuestionnaireResult | undefined;
 			if (!details) {
 				const text = result.content[0];
 				return new Text(text?.type === "text" ? text.text : "", 0, 0);
@@ -896,7 +483,6 @@ export default function (pi: ExtensionAPI) {
 			if (details.cancelled) {
 				return new Text(theme.fg("warning", "Cancelled"), 0, 0);
 			}
-
 			const lines = details.answers.map((a) => {
 				if (a.wasCustom) {
 					return `${theme.fg("success", "✓ ")}${theme.fg("accent", a.id)}: ${theme.fg("muted", "(wrote) ")}${a.label}`;
@@ -906,100 +492,5 @@ export default function (pi: ExtensionAPI) {
 			});
 			return new Text(lines.join("\n"), 0, 0);
 		},
-	});
-
-	// /answer command + shortcut.
-	const answerHandler = async (ctx: ExtensionContext) => {
-		if (!ctx.hasUI) {
-			ctx.ui.notify("answer requires interactive mode", "error");
-			return;
-		}
-		if (!ctx.model) {
-			ctx.ui.notify("No model selected", "error");
-			return;
-		}
-
-		const lastAssistantText = findLastAssistantText(ctx);
-		if (!lastAssistantText) {
-			ctx.ui.notify("Couldn't find a completed last assistant message", "error");
-			return;
-		}
-
-		let extractionModel: Model<Api>;
-		try {
-			extractionModel = await selectExtractionModel(ctx);
-		} catch (err: any) {
-			ctx.ui.notify(err?.message || "Failed to select extraction model", "error");
-			return;
-		}
-
-		const extractionResult = await ctx.ui.custom<ExtractionResult | null>((tui, theme, _kb, done) => {
-			const loader = new BorderedLoader(tui, theme, `Extracting questions using ${extractionModel.id}...`);
-			loader.onAbort = () => done(null);
-
-			const doExtract = async () => {
-				const apiKey = await ctx.modelRegistry.getApiKey(extractionModel);
-				if (!apiKey) return null;
-
-				const userMessage: UserMessage = {
-					role: "user",
-					content: [{ type: "text", text: lastAssistantText }],
-					timestamp: Date.now(),
-				};
-
-				const response = await complete(
-					extractionModel,
-					{ systemPrompt: EXTRACTION_SYSTEM_PROMPT, messages: [userMessage] },
-					{ apiKey, signal: loader.signal },
-				);
-
-				if (response.stopReason === "aborted") return null;
-
-				const responseText = response.content
-					.filter((c): c is { type: "text"; text: string } => c.type === "text")
-					.map((c) => c.text)
-					.join("\n");
-
-				return parseExtractionResult(responseText);
-			};
-
-			doExtract()
-				.then(done)
-				.catch(() => done(null));
-
-			return loader;
-		});
-
-		if (extractionResult === null) {
-			ctx.ui.notify("Cancelled", "info");
-			return;
-		}
-
-		if (!extractionResult || extractionResult.questions.length === 0) {
-			ctx.ui.notify("No questions found in the last message", "info");
-			return;
-		}
-
-		const answersText = await ctx.ui.custom<string | null>((tui, theme, kb, done) => {
-			return new QnAComponent(extractionResult.questions, tui, theme, kb, ctx.cwd, done);
-		});
-
-		if (answersText === null) {
-			ctx.ui.notify("Cancelled", "info");
-			return;
-		}
-
-		// Send answers back to the agent as a real user message.
-		pi.sendUserMessage("Here are the answers:\n\n" + answersText);
-	};
-
-	pi.registerCommand("answer", {
-		description: "Extract questions from last assistant message into an interactive Q&A UI",
-		handler: (_args, ctx) => answerHandler(ctx),
-	});
-
-	pi.registerShortcut("ctrl+.", {
-		description: "Extract and answer questions from last assistant message",
-		handler: answerHandler,
 	});
 }
