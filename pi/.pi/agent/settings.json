@@ -2,12 +2,14 @@
   "lastChangelogVersion": "0.79.10",
   "theme": "light",
   "enabledModels": [
-    "openai-codex/gpt-5.4",
-    "openai-codex/gpt-5.5"
+    "openai-codex/gpt-5.6-luna",
+    "openai-codex/gpt-5.6-sol",
+    "openai-codex/gpt-5.6-terra"
   ],
   "defaultThinkingLevel": "medium",
   "defaultProvider": "openai-codex",
-  "defaultModel": "gpt-5.5",
+  "defaultModel": "gpt-5.6-sol",
   "steeringMode": "all",
   "hideThinkingBlock": true
+  "showHardwareCursor": true
 }
