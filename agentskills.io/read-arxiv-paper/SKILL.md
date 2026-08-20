@@ -17,13 +17,13 @@ Notice the /src/ in the url. Once you have the URL:
 
 ### Part 2: Download the paper source
 
-Fetch the url to a local .tar.gz file. A good location is `~/.cache/read-arxiv-paper/knowledge/{arxiv_id}.tar.gz`.
+Fetch the url to a local .tar.gz file. A good location is `~/.local/tmp/read-arxiv-paper/knowledge/{arxiv_id}.tar.gz`.
 
 (If the file already exists, there is no need to re-download it).
 
 ### Part 3: Unpack the file in that folder
 
-Unpack the contents into `~/.cache/nanochat/knowledge/{arxiv_id}` directory.
+Unpack the contents into `~/.local/tmp/read-arxiv-paper/knowledge/{arxiv_id}` directory.
 
 ### Part 4: Locate the entrypoint
 
@@ -35,5 +35,5 @@ Once you've found the entrypoint, Read the contents and then recurse through all
 
 ### Part 6: Report
 
-Once you've read the paper, produce a summary of the paper into a markdown file at `./knowledge/summary_{tag}.md`. Notice that 1) use the local knowledge directory here (it's easier for me to open and reference here), not in `~/.cache`, and 2) generate some reasonable `tag` like e.g. `conditional_memory` or `metaclip 2` or whatever seems appropriate given the paper. Probably make sure that the tag doesn't exist yet so you're not overwriting files.
+Once you've read the paper, produce a summary of the paper into a markdown file at `docs/llms/papers/summary_{tag}.md`. Notice that 1) use the local knowledge directory here (it's easier for me to open and reference here), not in `~/.local/tmp`, and 2) generate some reasonable `tag` like e.g. `conditional_memory` or `metaclip 2` or whatever seems appropriate given the paper. Probably make sure that the tag doesn't exist yet so you're not overwriting files.
 

@@ -1,4 +1,8 @@
+set -gx LANG C.utf8
+set -gx LC_ALL C.utf8
+
 set -gx EDITOR hx
+set -gx GOBIN $HOME/.local/bin
 
 # Set up path
 fish_add_path /usr/local/bin
@@ -33,11 +37,19 @@ set -gx FZF_DEFAULT_COMMAND rg --files
 
 if not set -q GITHUB_TOKEN
     if command -q gh
+        echo "GITHUB_TOKEN is unset; setting it with 'gh auth token'."
+        echo "To avoid this on every new shell, consider running:"
+        echo "  tmux set-environment -g GITHUB_TOKEN (gh auth token)"
+        echo "  set -gx GITHUB_TOKEN (gh auth token)"
         set -gx GITHUB_TOKEN (gh auth token 2>/dev/null)
     end
 end
 
 if status --is-interactive
+    function tmux --wraps tmux
+        command tmux -u $argv
+    end
+
     if test -f /opt/homebrew/bin/brew
         # Source the homebrew goodies to get my path set up
         /opt/homebrew/bin/brew shellenv | source

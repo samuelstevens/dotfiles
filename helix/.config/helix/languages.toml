@@ -39,6 +39,28 @@ command = "deno"
 args = ["lsp"]
 config.deno.enable = true
 
+[language-server.typescript-language-server]
+command = "tsgo"
+args = ["--lsp", "--stdio"]
+
+# From https://github.com/helix-editor/helix/issues/15134#issuecomment-3912058992
+[language-server.typescript-language-server.config.typescript]
+updateImportsOnFileMove.enabled = "always"
+suggest.completeFunctionCalls = true
+tsserver.enableTracing = true
+inlayHints.parameterNames.enabled = "all"
+inlayHints.parameterTypes.enabled = true
+inlayHints.variableTypes.enabled = true
+inlayHints.propertyDeclarationTypes.enabled = true
+inlayHints.functionLikeReturnTypes = true
+inlayHints.enumMemberValues.enabled = true
+format.enable = false
+format.semicolons = "remove"
+preferences.importModuleSpecifier = "non-relative"
+preferences.importModuleSpecifierEnding = "auto"
+tsserver.pluginPaths = ["typescript-plugin-css-modules", "./node_modules"]
+tsserver.experimental.enableProjectDiagnostics = true
+
 #############
 # Languages #
 #############
@@ -47,12 +69,6 @@ config.deno.enable = true
 name = "python"
 language-servers = ["ruff", "ty", "copilot"]
 auto-format = true
-
-
-[[language]]
-name = "markdown"
-language-servers = ["drafty", "copilot"]
-
 
 [[language]]
 name = "latex"
@@ -95,3 +111,4 @@ roots = ["deno.json", "deno.jsonc", "package.json"]
 file-types = ["js", "jsx"]
 auto-format = true
 language-servers = ["deno-lsp"]
+

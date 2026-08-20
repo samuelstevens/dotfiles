@@ -1,2 +1,188 @@
-model = "gpt-5.5"
-model_reasoning_effort = "high"
+model = "gpt-5.6-sol"
+model_reasoning_effort = "medium"
+# This host is a containerd container; AppArmor (cri-containerd.apparmor.d) denies
+# the mount calls bubblewrap needs, so sandboxed exec can never work here.
+sandbox_mode = "danger-full-access"
+approvals_reviewer = "user"
+service_tier = "default"
+[projects."/home/samuel.stevens@liquid.ai/.dotfiles"]
+trust_level = "trusted"
+
+[projects."/home/samuel.stevens@liquid.ai/projects/liquid-vlm"]
+trust_level = "trusted"
+
+[projects."/home/samuel.stevens@liquid.ai/.local/bin"]
+trust_level = "trusted"
+
+[projects."/home/samuel.stevens@liquid.ai/projects/cuda-rocm-demo"]
+trust_level = "trusted"
+
+[projects."/home/samuel.stevens@liquid.ai/projects/vendored/MetaCLIP"]
+trust_level = "trusted"
+
+[projects."/home/samuel.stevens@liquid.ai/projects/vendored/datacomp"]
+trust_level = "trusted"
+
+[projects."/home/samuel.stevens@liquid.ai/projects/src/liquid-vlm3"]
+trust_level = "trusted"
+
+[projects."/home/samuel.stevens@liquid.ai/projects/src/liquid-vlm"]
+trust_level = "trusted"
+
+[projects."/home/samuel.stevens@liquid.ai/projects/src/vlm-recaptioning"]
+trust_level = "trusted"
+
+[projects."/home/shared_tw/datasets/mm_image/liquid_vlm_data/datacomp_medium"]
+trust_level = "trusted"
+
+[projects."/home/samuel.stevens@liquid.ai"]
+trust_level = "trusted"
+
+[projects."/home/samuel.stevens@liquid.ai/projects/src/liquid-vlm4"]
+trust_level = "trusted"
+
+[projects."/home/samuel.stevens@liquid.ai/projects/src/liquid-vlm5"]
+trust_level = "trusted"
+
+[projects."/home/samuel.stevens@liquid.ai/projects/src"]
+trust_level = "trusted"
+
+[projects."/home/samuel.stevens@liquid.ai/projects/src/sam"]
+trust_level = "trusted"
+
+[projects."/home/shared_tw/datasets/mm_image/liquid_vlm_data/images"]
+trust_level = "trusted"
+
+[projects."/home/samuel.stevens@liquid.ai/projects/src/rig"]
+trust_level = "trusted"
+
+[projects."/home/samuel.stevens@liquid.ai/projects/src/utilyze"]
+trust_level = "trusted"
+
+[projects."/home/samuel.stevens@liquid.ai/projects/vendored/idle"]
+trust_level = "trusted"
+
+[projects."/home/samuel.stevens@liquid.ai/projects/src/liquid_lfm"]
+trust_level = "trusted"
+
+[projects."/home/samuel.stevens@liquid.ai/projects/src/liquid_lfm2"]
+trust_level = "trusted"
+
+[projects."/home/samuel.stevens@liquid.ai/projects/src/liquid-vlm6"]
+trust_level = "trusted"
+
+[projects."/home/shared_tw"]
+trust_level = "trusted"
+
+[projects."/home/samuel.stevens@liquid.ai/projects/src/liquid_lfm3"]
+trust_level = "trusted"
+
+[projects."/home/samuel.stevens@liquid.ai/projects/src/liquid_lfm4"]
+trust_level = "trusted"
+
+[projects."/home/samuel.stevens@liquid.ai/projects/src/liquid-vlm-reports"]
+trust_level = "trusted"
+
+[projects."/home/samuel.stevens@liquid.ai/projects/src/demo"]
+trust_level = "trusted"
+
+[projects."/home/samuel.stevens@liquid.ai/projects/src/mytrain"]
+trust_level = "trusted"
+
+[projects."/home/samuel.stevens@liquid.ai/projects/src/datacurate"]
+trust_level = "trusted"
+
+[projects."/home/samuel.stevens@liquid.ai/projects/src/liquid-conformance"]
+trust_level = "trusted"
+
+[projects."/home/samuel.stevens@liquid.ai/projects/src/correctness-testing"]
+trust_level = "trusted"
+
+[projects."/home/samuel.stevens@liquid.ai/projects/src/ghrel"]
+trust_level = "trusted"
+
+[projects."/home/samuel.stevens@liquid.ai/projects/src/datatools/viewers/sft-text-only"]
+trust_level = "trusted"
+
+[projects."/home/shared_tw/datasets/mm_image/liquid_vlm_data/lfm2_5_2_6b_text_sft_65536"]
+trust_level = "trusted"
+
+[projects."/home/samuel.stevens@liquid.ai/projects/src/testing"]
+trust_level = "trusted"
+
+[projects."/home/samuel.stevens@liquid.ai/projects/src/testing/liquid-conformance"]
+trust_level = "trusted"
+
+[projects."/home/samuel.stevens@liquid.ai/projects/src/datatools/viewers/agentic-evals"]
+trust_level = "trusted"
+
+[projects."/home/samuel.stevens@liquid.ai/projects/src/flatty"]
+trust_level = "trusted"
+
+[projects."/home/samuel.stevens@liquid.ai/.config/hunk"]
+trust_level = "trusted"
+
+[projects."/home/samuel.stevens@liquid.ai/projects/src/datatools/viewers/evals-text-only"]
+trust_level = "trusted"
+
+[projects."/home/samuel.stevens@liquid.ai/projects/src/datatools/viewers/evals-vlm"]
+trust_level = "trusted"
+
+[projects."/home/samuel.stevens@liquid.ai/Documents/wiki"]
+trust_level = "trusted"
+
+[projects."/home/samuel.stevens@liquid.ai/projects/src/liquid-vlm2"]
+trust_level = "trusted"
+
+[projects."/home/samuel.stevens@liquid.ai/projects/src/testing/correctness-testing"]
+trust_level = "trusted"
+
+[projects."/home/samuel.stevens@liquid.ai/projects/src/testing/model-pipeline"]
+trust_level = "trusted"
+
+[projects."/home/samuel.stevens@liquid.ai/projects/src/plasticity"]
+trust_level = "trusted"
+
+[projects."/home/teams/vlm/checkpoints/sina.semnani@liquid.ai/runs/antidoom_mix20k_dynamic_dapo_8gpu_2k/checkpoints/step_000000450/hf"]
+trust_level = "trusted"
+
+[projects."/home/samuel.stevens@liquid.ai/projects/src/vllm"]
+trust_level = "trusted"
+
+[notice]
+hide_rate_limit_model_nudge = true
+fast_default_opt_out = true
+hide_full_access_warning = true
+
+[notice.model_migrations]
+"gpt-5.3-codex" = "gpt-5.4"
+
+[plugins."github@openai-curated"]
+enabled = true
+
+[plugins."google-drive@openai-curated"]
+enabled = true
+
+[plugins."slack@openai-curated-remote"]
+enabled = false
+
+[plugins."google-drive@openai-curated-remote"]
+enabled = false
+
+[plugins."sites@openai-bundled"]
+enabled = true
+
+[plugins."visualize@openai-bundled"]
+enabled = true
+
+[tui]
+session_picker_view = "comfortable"
+
+[tui.model_availability_nux]
+"gpt-5.5" = 4
+"gpt-5.6-sol" = 4
+
+[marketplaces.openai-bundled]
+last_updated = "2026-08-13T15:45:43Z"
+source_type = "local"
+source = "/home/samuel.stevens@liquid.ai/.dotfiles/codex/.codex/.tmp/bundled-marketplaces/openai-bundled"
