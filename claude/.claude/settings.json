@@ -3,7 +3,10 @@
     "commit": "",
     "pr": ""
   },
-  "model": "claude-fable-5[1m]",
+  "permissions": {
+    "defaultMode": "auto"
+  },
+  "model": "opus[1m]",
   "hooks": {
     "Notification": [
       {
@@ -18,9 +21,9 @@
     ]
   },
   "enabledPlugins": {
-    "gopls-lsp@claude-plugins-official": true,
-    "clangd-lsp@claude-plugins-official": true,
-    "rust-analyzer-lsp@claude-plugins-official": true
+    "gopls-lsp@claude-plugins-official": false,
+    "clangd-lsp@claude-plugins-official": false,
+    "rust-analyzer-lsp@claude-plugins-official": false
   },
   "effortLevel": "high",
   "tui": "fullscreen",
