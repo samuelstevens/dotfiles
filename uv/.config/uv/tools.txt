@@ -1,0 +1,19 @@
+# Declarative uv tools, one spec per line (a stow package, like ghrel/packages).
+# Format: the exact argument you would pass to `uv tool install`.
+# The first token of each line must be the tool name (used by `uv-tools prune`).
+#
+# Usage:
+#   uv-tools sync   # install missing, upgrade existing
+#   uv-tools list   # print this file's specs
+#   uv-tools prune  # uninstall tools not listed here
+
+# PyPI tools
+ast-grep-cli
+lqh
+modal
+ruff
+
+# Non-PyPI tools (PEP 508 direct references)
+eval-dashboard-cli @ git+ssh://git@github.com/Liquid4All/eval-dashboard.git#subdirectory=cli
+ghrel @ git+https://github.com/samuelstevens/ghrel
+liquid-cluster-utils @ /home/shared_tw/liquid_cluster_utils/dist/liquid_cluster_utils-0.1.0-py3-none-any.whl
