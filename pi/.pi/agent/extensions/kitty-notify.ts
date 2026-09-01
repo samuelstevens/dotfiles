@@ -1,6 +1,10 @@
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
+import { readFileSync } from "node:fs";
 
 const ESC = "\x1b";
+const ICON_DATA = readFileSync(new URL("./pi-icon.png", import.meta.url)).toString("base64");
+const ICON_CHUNK_SIZE = 2048;
+const TMUX_NOTIFICATION_KEY = 42;
 let notificationSequence = 0;
 
 function sanitize(text: string): string {
@@ -18,13 +22,22 @@ function writeTerminal(sequence: string): void {
 	process.stdout.write(sequence);
 }
 
-function notify(title: string, body: string): void {
-	const id = `pi-${Date.now().toString(36)}-${notificationSequence++}`;
-	writeTerminal(`${ESC}]99;i=${id}:d=0;${sanitize(title)}${ESC}\\`);
+function notificationId(): string {
+	return `pi-${Date.now().toString(36)}-${notificationSequence++}`;
+}
+
+function notify(id: string, title: string, body: string): void {
+	writeTerminal(`${ESC}]99;i=${id}:d=0:a=focus,report;${sanitize(title)}${ESC}\\`);
+
+	for (let offset = 0; offset < ICON_DATA.length; offset += ICON_CHUNK_SIZE) {
+		const chunk = ICON_DATA.slice(offset, offset + ICON_CHUNK_SIZE);
+		writeTerminal(`${ESC}]99;i=${id}:d=0:e=1:p=icon;${chunk}${ESC}\\`);
+	}
+
 	writeTerminal(`${ESC}]99;i=${id}:p=body;${sanitize(body)}${ESC}\\`);
 }
 
-async function prepareNotification(pi: ExtensionAPI): Promise<string> {
+async function prepareNotification(pi: ExtensionAPI, id: string): Promise<string> {
 	if (!process.env.TMUX) return "outside tmux";
 
 	const pane = process.env.TMUX_PANE;
@@ -32,8 +45,17 @@ async function prepareNotification(pi: ExtensionAPI): Promise<string> {
 	if (pane) args.push("-t", pane);
 	args.push("#{session_name}: #{window_name} (#{window_index}/#{pane_index})");
 
-	// The focus hook in ~/.tmux.conf consumes this one-shot pane target.
-	if (pane) args.push(";", "set-option", "-gq", "@kitty_notify_pane", pane);
+	if (pane) {
+		const activation = `${ESC}]99;i=${id};${ESC}\\`;
+		args.push(";", "set-option", "-gq", "@kitty_notify_pane", pane);
+		args.push(
+			";",
+			"set-option",
+			"-sq",
+			`user-keys[${TMUX_NOTIFICATION_KEY}]`,
+			activation,
+		);
+	}
 
 	const result = await pi.exec("tmux", args);
 	return result.code === 0 ? result.stdout.trim() : "unknown tmux window";
@@ -64,15 +86,17 @@ export default function (pi: ExtensionAPI) {
 	});
 
 	pi.on("agent_settled", async () => {
-		const location = await prepareNotification(pi);
-		notify(`Pi · ${location}`, messagePreview(latestMessage) || "Finished");
+		const id = notificationId();
+		const location = await prepareNotification(pi, id);
+		notify(id, `Pi · ${location}`, messagePreview(latestMessage) || "Finished");
 	});
 
 	pi.registerCommand("kitty-notify-test", {
 		description: "Send a test Kitty desktop notification",
 		handler: async (_args, ctx) => {
-			const location = await prepareNotification(pi);
-			notify(`Pi · ${location}`, "Test notification");
+			const id = notificationId();
+			const location = await prepareNotification(pi, id);
+			notify(id, `Pi · ${location}`, "Test notification");
 			ctx.ui.notify("Sent Kitty notification", "info");
 		},
 	});
