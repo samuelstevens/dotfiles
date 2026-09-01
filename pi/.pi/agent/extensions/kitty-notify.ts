@@ -40,8 +40,10 @@ async function prepareNotification(pi: ExtensionAPI): Promise<string> {
 }
 
 function messagePreview(message: string): string {
-	const text = message.replace(/\s+/g, " ").trim();
-	return `${text.slice(0, 80)}${text.length > 80 ? "..." : ""}`;
+	const newline = message.search(/\r?\n/);
+	const firstLine = message.slice(0, newline === -1 ? undefined : newline).trim();
+	const truncated = newline !== -1 || firstLine.length > 80;
+	return `${firstLine.slice(0, 80)}${truncated ? "..." : ""}`;
 }
 
 export default function (pi: ExtensionAPI) {
