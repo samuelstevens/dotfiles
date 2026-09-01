@@ -6,6 +6,7 @@ const ICON_DATA = readFileSync(new URL("./pi-icon.png", import.meta.url)).toStri
 const ICON_CHUNK_SIZE = 2048;
 const TMUX_NOTIFICATION_KEY = 42;
 let notificationSequence = 0;
+let activeNotificationId: string | undefined;
 
 function sanitize(text: string): string {
 	return text.replace(/\p{Cc}/gu, " ").trim();
@@ -26,8 +27,17 @@ function notificationId(): string {
 	return `pi-${Date.now().toString(36)}-${notificationSequence++}`;
 }
 
+function closeNotification(id: string): void {
+	writeTerminal(`${ESC}]99;i=${id}:p=close;${ESC}\\`);
+	if (activeNotificationId === id) activeNotificationId = undefined;
+}
+
 function notify(id: string, title: string, body: string): void {
-	writeTerminal(`${ESC}]99;i=${id}:d=0:a=focus,report;${sanitize(title)}${ESC}\\`);
+	if (activeNotificationId) closeNotification(activeNotificationId);
+	activeNotificationId = id;
+
+	const actions = process.env.TMUX ? "focus,report" : "focus";
+	writeTerminal(`${ESC}]99;i=${id}:d=0:a=${actions};${sanitize(title)}${ESC}\\`);
 
 	for (let offset = 0; offset < ICON_DATA.length; offset += ICON_CHUNK_SIZE) {
 		const chunk = ICON_DATA.slice(offset, offset + ICON_CHUNK_SIZE);
@@ -71,6 +81,8 @@ function messagePreview(message: string): string {
 
 export default function (pi: ExtensionAPI) {
 	let latestMessage = "";
+	let promptGeneration = 0;
+	let promptNotificationId: string | undefined;
 
 	pi.on("before_agent_start", () => {
 		latestMessage = "";
@@ -83,6 +95,25 @@ export default function (pi: ExtensionAPI) {
 			.filter((block) => block.type === "text")
 			.map((block) => block.text)
 			.join("\n");
+	});
+
+	pi.on("ui_prompt_start", async (event) => {
+		const generation = ++promptGeneration;
+		const id = notificationId();
+		const location = await prepareNotification(pi, id);
+		if (generation !== promptGeneration) return;
+
+		promptNotificationId = id;
+		const detail = event.title ? `: ${event.title}` : "";
+		notify(id, `Pi · ${location}`, `Waiting for input${detail}`);
+	});
+
+	pi.on("ui_prompt_end", () => {
+		promptGeneration++;
+		if (!promptNotificationId) return;
+
+		closeNotification(promptNotificationId);
+		promptNotificationId = undefined;
 	});
 
 	pi.on("agent_settled", async () => {
