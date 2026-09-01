@@ -4,7 +4,7 @@ const ESC = "\x1b";
 let notificationSequence = 0;
 
 function sanitize(text: string): string {
-	return text.replace(/[\x00-\x1f\x7f]/g, " ").trim();
+	return text.replace(/\p{Cc}/gu, " ").trim();
 }
 
 function writeTerminal(sequence: string): void {
@@ -24,46 +24,52 @@ function notify(title: string, body: string): void {
 	writeTerminal(`${ESC}]99;i=${id}:p=body;${sanitize(body)}${ESC}\\`);
 }
 
-function formatDuration(milliseconds: number): string {
-	const seconds = milliseconds / 1000;
-	if (seconds < 60) return `${seconds.toFixed(1)}s`;
-
-	const minutes = Math.floor(seconds / 60);
-	return `${minutes}m ${Math.round(seconds % 60)}s`;
-}
-
-async function getTmuxLocation(pi: ExtensionAPI): Promise<string> {
+async function prepareNotification(pi: ExtensionAPI): Promise<string> {
 	if (!process.env.TMUX) return "outside tmux";
 
+	const pane = process.env.TMUX_PANE;
 	const args = ["display-message", "-p"];
-	if (process.env.TMUX_PANE) args.push("-t", process.env.TMUX_PANE);
-	args.push("#{session_name}:#{window_name} #{window_index}");
+	if (pane) args.push("-t", pane);
+	args.push("#{session_name}: #{window_name} (#{window_index}/#{pane_index})");
+
+	// The focus hook in ~/.tmux.conf consumes this one-shot pane target.
+	if (pane) args.push(";", "set-option", "-gq", "@kitty_notify_pane", pane);
 
 	const result = await pi.exec("tmux", args);
 	return result.code === 0 ? result.stdout.trim() : "unknown tmux window";
 }
 
-export default function (pi: ExtensionAPI) {
-	let startedAt: number | undefined;
+function messagePreview(message: string): string {
+	const text = message.replace(/\s+/g, " ").trim();
+	return `${text.slice(0, 80)}${text.length > 80 ? "..." : ""}`;
+}
 
-	pi.on("agent_start", () => {
-		startedAt ??= performance.now();
+export default function (pi: ExtensionAPI) {
+	let latestMessage = "";
+
+	pi.on("before_agent_start", () => {
+		latestMessage = "";
+	});
+
+	pi.on("message_end", (event) => {
+		if (event.message.role !== "assistant") return;
+
+		latestMessage = event.message.content
+			.filter((block) => block.type === "text")
+			.map((block) => block.text)
+			.join("\n");
 	});
 
 	pi.on("agent_settled", async () => {
-		const elapsed = startedAt === undefined ? undefined : performance.now() - startedAt;
-		startedAt = undefined;
-
-		const duration = elapsed === undefined ? "unknown duration" : formatDuration(elapsed);
-		const location = await getTmuxLocation(pi);
-		notify(`Pi · ${duration}`, location);
+		const location = await prepareNotification(pi);
+		notify(`Pi · ${location}`, messagePreview(latestMessage) || "Finished");
 	});
 
 	pi.registerCommand("kitty-notify-test", {
 		description: "Send a test Kitty desktop notification",
 		handler: async (_args, ctx) => {
-			const location = await getTmuxLocation(pi);
-			notify("Pi · 12.3s", location);
+			const location = await prepareNotification(pi);
+			notify(`Pi · ${location}`, "Test notification");
 			ctx.ui.notify("Sent Kitty notification", "info");
 		},
 	});
