@@ -5,6 +5,7 @@ const ESC = "\x1b";
 const ICON_DATA = readFileSync(new URL("./pi-icon.png", import.meta.url)).toString("base64");
 const ICON_CHUNK_SIZE = 2048;
 const TMUX_NOTIFICATION_KEY = 42;
+const SETTLED_NOTIFICATION_THRESHOLD_MS = 10 * 60 * 1000;
 let notificationSequence = 0;
 let activeNotificationId: string | undefined;
 
@@ -80,9 +81,14 @@ function messagePreview(message: string): string {
 }
 
 export default function (pi: ExtensionAPI) {
+	let agentStartedAt: number | undefined;
 	let latestMessage = "";
 	let promptGeneration = 0;
 	let promptNotificationId: string | undefined;
+
+	pi.on("agent_start", () => {
+		agentStartedAt ??= performance.now();
+	});
 
 	pi.on("before_agent_start", () => {
 		latestMessage = "";
@@ -117,6 +123,10 @@ export default function (pi: ExtensionAPI) {
 	});
 
 	pi.on("agent_settled", async () => {
+		const elapsed = agentStartedAt === undefined ? undefined : performance.now() - agentStartedAt;
+		agentStartedAt = undefined;
+		if (elapsed === undefined || elapsed < SETTLED_NOTIFICATION_THRESHOLD_MS) return;
+
 		const id = notificationId();
 		const location = await prepareNotification(pi, id);
 		notify(id, `Pi · ${location}`, messagePreview(latestMessage) || "Finished");
