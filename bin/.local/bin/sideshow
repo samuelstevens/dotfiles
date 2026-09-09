@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+fnm_bin="$HOME/.local/bin/fnm"
+
+if [[ ! -x "$fnm_bin" ]]; then
+    echo "sideshow: fnm executable not found at $fnm_bin" >&2
+    exit 127
+fi
+
+eval "$("$fnm_bin" env --shell bash)"
+
+if ! command -v npx >/dev/null 2>&1; then
+    echo "sideshow: npx is unavailable after initializing fnm" >&2
+    exit 127
+fi
+
+exec npx -y sideshow "$@"
