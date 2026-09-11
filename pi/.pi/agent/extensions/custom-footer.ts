@@ -309,7 +309,7 @@ export default function (pi: ExtensionAPI) {
 			footer.setAutoCompactEnabled(settings.getCompactionEnabled());
 			const unsubscribe = footerData.onBranchChange(() => tui.requestRender());
 			// Re-evaluate "today" even when the session sits idle across midnight.
-			const timer = setInterval(() => tui.requestRender(), 60_000);
+			const timer = setInterval(() => tui.requestRender(), 10 * 60_000);
 			timer.unref();
 			return {
 				render: (width) => footer.render(width),
