@@ -5,10 +5,13 @@
  * Internal session/theme dependencies are supplied by the extension API;
  * unexported usage helpers are copied below.
  */
-import { isAbsolute, relative, resolve, sep } from "node:path";
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { isAbsolute, join, relative, resolve, sep } from "node:path";
 import type { Usage } from "@earendil-works/pi-ai";
 import {
 	SettingsManager,
+	getAgentDir,
 	type ExtensionAPI,
 	type ExtensionContext,
 	type ReadonlyFooterDataProvider,
@@ -28,13 +31,38 @@ export function lastMessageTimestamp(entries: readonly SessionEntry[]): number |
 	return undefined;
 }
 
-export function formatLastMessage(timestamp: number | undefined, now = new Date()): string {
+// Optional ~/.pi/agent/custom-footer.json: { "timeZone": "America/New_York" }
+function readTimeZone(): string | undefined {
+	const path = join(getAgentDir(), "custom-footer.json");
+	let text: string;
+	try {
+		text = readFileSync(path, "utf8");
+	} catch (error) {
+		if ((error as NodeJS.ErrnoException).code === "ENOENT") return undefined;
+		throw error;
+	}
+	const config = JSON.parse(text);
+	assert(config && typeof config === "object" && !Array.isArray(config), `${path}: expected an object`);
+	assert(config.timeZone === undefined || typeof config.timeZone === "string", `${path}: timeZone must be a string`);
+	// Validate eagerly so a typo is reported on /reload, not on every render.
+	new Intl.DateTimeFormat("en-US", { timeZone: config.timeZone });
+	return config.timeZone;
+}
+
+export function formatLastMessage(timestamp: number | undefined, now = new Date(), timeZone?: string): string {
 	if (timestamp === undefined) return "";
 	const date = new Date(timestamp);
 	if (!Number.isFinite(date.getTime())) return "";
-	const time = `${date.getHours() % 12 || 12}:${String(date.getMinutes()).padStart(2, "0")}${date.getHours() < 12 ? "AM" : "PM"}`;
-	const day = date.toDateString() === now.toDateString() ? "" :
-		` on ${date.toLocaleDateString("en-US", { weekday: "short" })} ${date.toLocaleDateString("en-US", { month: "short" })} ${date.getDate()}`;
+	const formatter = new Intl.DateTimeFormat("en-US", {
+		timeZone, year: "numeric", month: "short", day: "numeric", weekday: "short",
+		hour: "numeric", minute: "2-digit", hour12: true,
+	});
+	const parts = (value: Date) => Object.fromEntries(formatter.formatToParts(value).map(({ type, value }) => [type, value]));
+	const message = parts(date);
+	const today = parts(now);
+	const sameDay = message.year === today.year && message.month === today.month && message.day === today.day;
+	const time = `${message.hour}:${message.minute}${message.dayPeriod}`;
+	const day = sameDay ? "" : ` on ${message.weekday} ${message.month} ${message.day}`;
 	return `last message: ${time}${day}`;
 }
 
@@ -102,7 +130,7 @@ export class FooterComponent implements Component {
 	private theme: Theme;
 	private footerData: ReadonlyFooterDataProvider;
 
-	constructor(ctx: ExtensionContext, pi: ExtensionAPI, theme: Theme, footerData: ReadonlyFooterDataProvider) {
+	constructor(ctx: ExtensionContext, pi: ExtensionAPI, theme: Theme, footerData: ReadonlyFooterDataProvider, private timeZone?: string) {
 		this.ctx = ctx;
 		this.pi = pi;
 		this.theme = theme;
@@ -276,7 +304,7 @@ export class FooterComponent implements Component {
 		const remainder = statsLine.slice(statsLeft.length); // padding + rightSide
 		const dimRemainder = theme.fg("dim", remainder);
 
-		const lastMessage = formatLastMessage(lastMessageTimestamp(this.ctx.sessionManager.getBranch()));
+		const lastMessage = formatLastMessage(lastMessageTimestamp(this.ctx.sessionManager.getBranch()), new Date(), this.timeZone);
 		if (lastMessage) {
 			const right = truncateToWidth(lastMessage, width);
 			pwd = truncateToWidth(pwd, Math.max(0, width - visibleWidth(right) - 2));
@@ -303,9 +331,16 @@ export class FooterComponent implements Component {
 export default function (pi: ExtensionAPI) {
 	pi.on("session_start", (_event, ctx) => {
 		if (ctx.mode !== "tui") return;
+		let timeZone: string | undefined;
+		try {
+			timeZone = readTimeZone();
+		} catch (error) {
+			ctx.ui.notify(`Could not load custom-footer.json: ${error}`, "error");
+			return;
+		}
 		const settings = SettingsManager.create(ctx.cwd, undefined, { projectTrusted: ctx.isProjectTrusted() });
 		ctx.ui.setFooter((tui, theme, footerData) => {
-			const footer = new FooterComponent(ctx, pi, theme, footerData);
+			const footer = new FooterComponent(ctx, pi, theme, footerData, timeZone);
 			footer.setAutoCompactEnabled(settings.getCompactionEnabled());
 			const unsubscribe = footerData.onBranchChange(() => tui.requestRender());
 			// Re-evaluate "today" even when the session sits idle across midnight.
