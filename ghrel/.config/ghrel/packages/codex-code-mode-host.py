@@ -12,10 +12,8 @@ binary = {
 
 
 def ghrel_verify(*, version: str, bin_name: str):
-    # codex-code-mode-host prints nothing on --version and blocks reading stdin
-    # until EOF; only the exit code is checkable.
     result = subprocess.run(
-        [bin_name, "--version"],
+        [bin_name, "-h"],
         stdin=subprocess.DEVNULL,
         capture_output=True,
         text=True,
