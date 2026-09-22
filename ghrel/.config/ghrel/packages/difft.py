@@ -4,8 +4,8 @@ import subprocess
 
 pkg = "Wilfred/difftastic"
 asset = {
-    "linux-x86_64": "difft-x86_64-unknown-linux-gnu.tar.gz",
-    "darwin-arm64": "difft-aarch64-apple-darwin.tar.gz",
+    "linux-x86_64": "difft-*-x86_64-unknown-linux-gnu.tar.gz",
+    "darwin-arm64": "difft-*-aarch64-apple-darwin.tar.gz",
 }
 binary = {
     "linux-x86_64": "difft",
