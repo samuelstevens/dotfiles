@@ -1,0 +1,55 @@
+onboarding = false
+
+[theme]
+name = "terminal"
+auto_switch = false
+
+# Every token names a terminal palette slot, so kitty's theme supplies the actual colors.
+# reset = kitty background/foreground. gray = color7, black = color0, cyan = color6, etc.
+# With panel_bg = "reset", herdr draws chip text (e.g., the active tab) in surface_dim, so black dividers mean black-on-blue chips (3.9:1).
+# No kitty accent fixes this and panel_bg = "white" would replace kitty's background, so we accept the low-contrast tab bar.
+# Kitty's cyan equals its green, so done (teal) uses blue to stay distinct from idle (green).
+# Kitty's yellow is unreadable on the gray row highlight (1.0:1), so working (yellow) uses magenta.
+[theme.custom]
+accent = "blue"
+panel_bg = "reset"
+sidebar_bg = "reset"
+active_row_bg = "gray"
+selection_bg = "gray"
+surface0 = "gray"
+surface1 = "gray"
+surface_dim = "black"
+overlay0 = "black"
+overlay1 = "black"
+text = "reset"
+subtext0 = "black"
+mauve = "magenta"
+green = "green"
+yellow = "magenta"
+red = "red"
+blue = "blue"
+teal = "blue"
+peach = "yellow"
+
+[keys]
+prefix = "ctrl+a"
+previous_workspace = "prefix+("
+next_workspace = "prefix+)"
+
+[terminal]
+default_shell = "fish"
+
+[ui]
+status_indicators = "symbols"
+agent_panel_sort = "priority"
+prompt_new_tab_name = false
+pane_borders = "always"
+
+[ui.sound]
+enabled = false
+
+[ui.sidebar.agents]
+rows = [["state_text", "machine", "workspace", "tab"], ["agent"]]
+
+[ui.sidebar.spaces]
+rows = [["workspace", "state_text"]]
