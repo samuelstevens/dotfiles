@@ -33,6 +33,8 @@ peach = "yellow"
 
 [keys]
 prefix = "ctrl+a"
+split_vertical = "prefix+|"
+split_horizontal = ["prefix+_", "prefix+minus"]
 previous_workspace = "prefix+("
 next_workspace = "prefix+)"
 
