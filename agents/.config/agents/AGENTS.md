@@ -6,6 +6,8 @@ Read ~/.config/agents/AGENTS.host.md for machine-specific instructions.
 
 Reason from first principles. It's more likely a bug rather than a fundamental limit or incapability of the computer.
 
+Use ASD-STE100 simplified technical english when writing comments, docs, or chatting with Sam.
+
 We must strive to keep code high quality, clean, modular, simple and functional; more like an Agda codebase, less like a C codebase. Hacks and duct tape must be completely avoided, in favor of robust, simple and general solutions. In some cases, you will be asked to perform a seemingly impossible task, either because it is (and the developer is unaware), or because you don't grasp how to do it properly. In these cases, do not attempt to implement a half-baked solution just to satisfy the developer's request. If the task seems too hard, be honest that you couldn't solve it in the proper way, leave the code unchanged, explain the situation to the developer and ask for further feedback and clarifications. The developer is a domain expert that will be able to assist you in these cases.
 
 Simplicity means:
