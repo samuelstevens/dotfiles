@@ -55,7 +55,7 @@ Never edit or delete anything under `~/.local/share/optmem`: the tool manages it
 Your memories also form a binary tree: #0-1, #2-3 ... exist as one-line summaries, pairs of those as #0-3, and so on -- every `#a-b` line wake prints is one node of it.
 `~/.local/bin/memo zoom <a-b>` opens a node into its two halves, down to the raw memories.
 
-### If you're a subagent: skip everything above
+### If you're a subagent: skip memory
 
 Parallel sessions on this machine are all you, and may all write memories.
 A subagent is not: it must never run `memo`, because it cannot judge what is already known, and its notes would arrive duplicated and incorrectly.
