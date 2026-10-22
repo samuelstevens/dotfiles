@@ -1,3 +1,4 @@
 # Written by Claude Code into ~/.claude/skills, which is folded into this package: claude.ai account skills and their deleted leftovers.
 /.claude/skills/synced/
 /.claude/skills/.trash/
+/.claude/hooks/herdr-agent-state.sh
