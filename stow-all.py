@@ -7,7 +7,7 @@ import sys
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent
-EXCLUDED_DIRS = {".git", "agentskills.io", "docs"}
+EXCLUDED_DIRS = {".git", "docs"}
 
 
 def is_stow_package(path: Path) -> bool:

@@ -1,0 +1,2 @@
+# Per-machine instructions: written into ~/.config/agents, which is folded into this package, and never synced.
+/.config/agents/AGENTS.host.md
