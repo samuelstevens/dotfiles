@@ -15,3 +15,5 @@ fi
 
 [ -f "$HOME/.cargo/env" ] && . "$HOME/.cargo/env"
 [ -f "$HOME/.local/bin/env" ] && . "$HOME/.local/bin/env"
+[ -f "$HOME/.deno/env" ] && . "$HOME/.deno/env"
+[ -d "$HOME/.lmstudio/bin" ] && export PATH="$PATH:$HOME/.lmstudio/bin"

@@ -1,5 +1,5 @@
-set -gx LANG C.utf8
-set -gx LC_ALL C.utf8
+set -gx LANG C.UTF-8
+set -gx LC_ALL C.UTF-8
 
 set -gx EDITOR hx
 set -gx GOBIN $HOME/.local/bin
@@ -15,6 +15,10 @@ if test -d /usr/local/go
 end
 if test -d $HOME/.docker/bin
     fish_add_path $HOME/.docker/bin
+end
+# Homebrew openjdk is keg-only; put it ahead of the /usr/bin/java stub
+if test -d /opt/homebrew/opt/openjdk/bin
+    fish_add_path /opt/homebrew/opt/openjdk/bin
 end
 if test -d $HOME/.pyenv
     pyenv init - | source
@@ -37,10 +41,12 @@ set -gx FZF_DEFAULT_COMMAND rg --files
 
 if not set -q GITHUB_TOKEN
     if command -q gh
-        echo "GITHUB_TOKEN is unset; setting it with 'gh auth token'."
-        echo "To avoid this on every new shell, consider running:"
-        echo "  tmux set-environment -g GITHUB_TOKEN (gh auth token)"
-        echo "  set -gx GITHUB_TOKEN (gh auth token)"
+        if set -q TMUX
+            echo "GITHUB_TOKEN is unset; setting it with 'gh auth token'."
+            echo "To avoid this on every new shell, consider running:"
+            echo "  tmux set-environment -g GITHUB_TOKEN (gh auth token)"
+            echo "  set -gx GITHUB_TOKEN (gh auth token)"
+        end
         set -gx GITHUB_TOKEN (gh auth token 2>/dev/null)
     end
 end
@@ -71,4 +77,8 @@ if status --is-interactive
     set -g fish_vi_force_cursor 1
 
     set fish_greeting ''
+end
+
+if test -d $HOME/.lmstudio/bin
+    fish_add_path --append $HOME/.lmstudio/bin
 end
