@@ -8,6 +8,8 @@ args= ["ty", "server"]
 
 [language-server.ty.config]
 inlayHints = { variableTypes = false, callArgumentNames = false }
+# PEP 723 script support: https://astral.sh/blog/uv-ty-integration
+experimental = { useUv = "on" }
 
 [language-server.drafty]
 command = "drafty"
@@ -103,6 +105,12 @@ roots = ["deno.json", "deno.jsonc", "package.json"]
 file-types = ["ts", "tsx"]
 auto-format = true
 language-servers = ["deno-lsp"]
+
+
+# quint-language-server 0.19.0 bundles Quint 0.31, which rejects valid temporal properties that use next() with orKeep(). The CLI (quint typecheck) still reports real errors.
+[[language]]
+name = "quint"
+language-servers = [{ name = "quint-language-server", except-features = ["diagnostics"] }]
 
 
 [[language]]
