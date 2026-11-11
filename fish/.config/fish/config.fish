@@ -65,6 +65,12 @@ if status --is-interactive
         fzf --fish | source
     end
 
+    # Atuin replaces the fzf ctrl+r history search. Install atuin by hand only
+    # on machines that sync history with it.
+    if command -q atuin
+        atuin init fish --disable-up-arrow --disable-ai | source
+    end
+
     # Use vi key bindings instead of those disgusting emacs bindings
     fish_vi_key_bindings
 
