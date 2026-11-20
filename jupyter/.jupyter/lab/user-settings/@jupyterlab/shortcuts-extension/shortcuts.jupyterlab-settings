@@ -1,0 +1,6 @@
+{
+  "shortcuts": [
+    { "command": "apputils:activate-command-palette", "keys": ["Accel K"], "selector": "body" },
+    { "command": "jupyterlab_code_formatter:format", "keys": ["F"], "selector": ".jp-Notebook.jp-mod-commandMode:not(.jp-mod-readWrite) :focus" }
+  ]
+}
