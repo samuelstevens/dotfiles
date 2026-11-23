@@ -36,6 +36,17 @@ fish_add_path $BUN_INSTALL/bin
 set -gx RIPGREP_CONFIG_PATH $HOME/.config/ripgrep/ripgreprc
 set -gx TODO_CONFIG $HOME/.config/todo/config
 
+# Use the password manager's SSH agent if this machine has one, so no key is
+# on disk: 1Password (work Mac, ~/.1password/agent.sock is a symlink to the
+# real socket) or Bitwarden (personal Mac). On other machines, keep
+# SSH_AUTH_SOCK as it is.
+for sock in $HOME/.1password/agent.sock $HOME/.bitwarden-ssh-agent.sock
+    if test -S $sock
+        set -gx SSH_AUTH_SOCK $sock
+        break
+    end
+end
+
 # Use ripgrep for fzf
 set -gx FZF_DEFAULT_COMMAND rg --files
 
