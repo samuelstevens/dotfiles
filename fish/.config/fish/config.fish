@@ -47,6 +47,13 @@ for sock in $HOME/.1password/agent.sock $HOME/.bitwarden-ssh-agent.sock
     end
 end
 
+# On a remote host, ~/.ssh/rc keeps this link pointed at a live forwarded
+# agent. Use it, so that shells in tmux and rex can use the agent too.
+set -l forwarded_agent $HOME/.ssh/agent-(hostname).sock
+if test -L $forwarded_agent
+    set -gx SSH_AUTH_SOCK $forwarded_agent
+end
+
 # Use ripgrep for fzf
 set -gx FZF_DEFAULT_COMMAND rg --files
 
