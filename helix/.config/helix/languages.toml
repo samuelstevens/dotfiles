@@ -11,10 +11,6 @@ inlayHints = { variableTypes = false, callArgumentNames = false }
 # PEP 723 script support: https://astral.sh/blog/uv-ty-integration
 experimental = { useUv = "on" }
 
-[language-server.drafty]
-command = "drafty"
-args = ["lsp"]
-
 [language-server.tinymist]
 command = "tinymist"
 
@@ -74,12 +70,12 @@ auto-format = true
 
 [[language]]
 name = "latex"
-language-servers = ["drafty", "texlab", "copilot"]
+language-servers = ["texlab", "copilot"]
 
 
 [[language]]
 name = "typst"
-language-servers = ["drafty", "tinymist", "copilot"]
+language-servers = ["tinymist", "copilot"]
 
 
 [[language]]
