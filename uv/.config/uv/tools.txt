@@ -12,6 +12,7 @@ ast-grep-cli
 lqh
 modal
 ruff
+ty
 
 # Non-PyPI tools (PEP 508 direct references)
 eval-dashboard-cli @ git+ssh://git@github.com/Liquid4All/eval-dashboard.git#subdirectory=cli
