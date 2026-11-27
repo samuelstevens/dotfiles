@@ -8,7 +8,7 @@
 | pi | `~/.agents/skills` | none |
 | Claude Code | `~/.claude/skills` only | one symlink per skill in `claude/.claude/skills/` |
 
-Claude Code does not read `~/.agents/skills` yet ([anthropics/claude-code#31005](https://github.com/anthropics/claude-code/issues/31005)). Its skills directory cannot simply point here either: Claude Code writes its own files into it (`synced/` for claude.ai account skills, `.trash/`), which `claude/.gitignore` keeps out of git.
+Claude Code does not read `~/.agents/skills` yet ([anthropics/claude-code#31005](https://github.com/anthropics/claude-code/issues/31005)). Its skills directory cannot simply point here either: Claude Code and other tools write their own skills into it (`synced/` for claude.ai account skills, `.trash/`, `rex/`).
 
 ## Add a skill
 
@@ -29,9 +29,23 @@ description: Do X. Use when the user asks for Y or Z.
 ln -s ../../../agents/.agents/skills/my-skill claude/.claude/skills/my-skill
 ```
 
-3. Restart the agents so they rediscover skills.
+3. Restow, then restart the agents so they rediscover skills:
 
-No restow is needed: `~/.agents/skills` and `~/.claude/skills` are each one symlink into this repo, so new entries appear immediately.
+```sh
+uv run stow-all.py agents claude
+```
+
+`~/.agents`, `~/.claude`, and `~/.codex` are real directories, because the agents and other tools write their own state into them. Stow links each tracked file or skill into them one by one. On a new machine, create the directories before the first stow, or stow folds them into one symlink into this repo and the agents write their state into git:
+
+```sh
+mkdir -p ~/.agents/skills ~/.claude/skills ~/.codex
+```
+
+Codex reads `~/.codex/AGENTS.md`, which is not in this repo. Link it once per machine:
+
+```sh
+ln -s ../.config/agents/AGENTS.md ~/.codex/AGENTS.md
+```
 
 ## Skills installed elsewhere
 
