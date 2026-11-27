@@ -44,7 +44,7 @@ completion support instead:
 
 ```sh
 mkdir -p ~/.local/src ~/.local/bin
-git clone https://github.com/samuelstevens/helix.git ~/.local/src/helix
+git clone git@github.com:samuelstevens/helix.git ~/.local/src/helix
 cd ~/.local/src/helix
 cargo build --release -p helix-term
 cp target/release/hx ~/.local/bin/hx
