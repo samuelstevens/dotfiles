@@ -4,11 +4,14 @@ theme = "onelight_brutalist"
 true-color = true
 mouse = false
 auto-pairs = false
-# Ignore all workspace trust stuff
-insecure = true
-
 inline-completion-timeout = 150
 inline-completion-auto-trigger = true
+
+# Start language servers everywhere without a prompt.
+# Load repo-local .helix/ config only after :workspace-trust.
+[editor.workspace-trust]
+level = "servers"
+prompt = false
 
 [editor.cursor-shape]
 insert = "bar"
