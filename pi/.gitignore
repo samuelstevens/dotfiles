@@ -1,0 +1,4 @@
+# Written by pi at runtime: login tokens, cached model list, chat transcripts.
+/.pi/agent/auth.json
+/.pi/agent/models-store.json
+/.pi/agent/sessions/
